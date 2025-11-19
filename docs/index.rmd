@@ -10,7 +10,10 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## R Markdown
 
-#### Has the COVID-19 pandemic influenced antidepressant prescribing patterns patterns during the Freshers' season (September-October) across Scottish health boards?
+#### Has the COVID-19 pandemic influenced antidepressant prescribing patterns during the Freshers' season (September-October) across Scottish health boards?
+
+## Winter season 
+## scotishcensusgov
 
 
 #Join the data boards
@@ -23,43 +26,42 @@ library(tidyverse)
 library(here) # directory stucture
 library(gt) # tables
 library(janitor) # cleaning data
+library(ggplot2) # plotting graph
 ```
 
+loading a large amount of data in a shorter time period by downloading and using the mapdfr function (data from 2017-2023)
+```{r}
+files <- list.files(here("data", "winter_data"), pattern = "csv")
 
-```{r, message = FALSE, warning = FALSE}
-freshers_all <- read_csv(here("freshers_all.csv"))
+winter_data <- files %>% 
+  map_dfr(~read_csv(here("data", "winter_data", .)))
 ```
 
-```{r, message = FALSE, warning = FALSE}
-freshers_clean_all <- freshers_all %>% 
-  select(hbt2014,bnf_item_code,bnf_item_description,number_of_paid_items,paid_quantity,paid_date_month)
+clean up data and filter for the sections you want 
+```{r}
+filtered_winter_data <- winter_data %>% 
+  clean_names() %>% 
+filter(str_starts(bnf_item_code,"0403")) #antidepressant code is 0403
+filtered_winter_data <- filtered_winter_data %>% 
+  mutate(year = as.numeric(substr(paid_date_month,1,4)), month = as.numeric(substr(paid_date_month,5,6)))#separates the date into years and month so that i can group winter sections
+filtered_winter_data <- filtered_winter_data %>% 
+  mutate(winter_year=case_when(month == 12 ~ year + 1, 
+month %in% c(1,2) ~ year) )#makes a new column to group the winter years 
 ```
+Graph 1
 
 ```{r}
-freshers_clean_all2 <- freshers_clean_all %>% 
-  mutate(paid_date_month = as.character(paid_date_month),year=as.numeric(substr(paid_date_month,1,4)))
-# summarise total prescriptions by year during freshers season "201709" so you need first four digits
-
-```
-
-```{r}
-freshers_summary <- freshers_clean_all2 %>% 
-group_by(year) %>% 
+winter_years_data <- filtered_winter_data %>% 
+  group_by(winter_year) %>% 
   summarise(total_items=sum(number_of_paid_items,na.rm = TRUE))
 
-#GROUPS BY YEAR
-library("ggplot2")
-ggplot(freshers_summary,aes(x=year,y=total_items))+
-  geom_line(linewidth=0.7,colour="blue")+
-  geom_point(size=2)+
-  scale_x_continuous(breaks =2017:2023) +
-  #to show the labels 2017 and 2013
-  labs(title="Antidepressant Prescriptions During Freshers Season",x="Year",y="Total Antidepressant Prescriptions") +
+  ggplot(winter_years_data,aes(x=winter_year,y=total_items)) +
+  geom_line(linewidth=0.7,colour = "blue") +
+    geom_point(size=2)+
+    scale_x_continuous(breaks=2017:2023) +
+ labs(title="Antidepressant Prescriptions During Winter",x="Year",y="Total Antidepressant Prescriptions") +
   theme_minimal()
 ```
-
-# I also will separate the different seasons and look at them more into detail. (pre-covid, covid, post-covid)
-# I also want to show each region separately by health boards 
 
 
 
