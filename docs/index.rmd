@@ -5,7 +5,7 @@ date: "2025-10-31"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## R Markdown
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = FALSE)
 #I loaded september to october data boards from 2017 - 2023 to represent the freshers season then I merged the health boards 
 #I summarise total antidepressant prescriptions per Freshers year and plotted the graph to see the trend 
 #Looked at pre coviid , during covid and after covid trend to see if there has been any impact or association
-```{r, message = FALSE, warning = FALSE}
+```{r}
 library(tidyverse)
 library(here) # directory stucture
 library(gt) # tables
