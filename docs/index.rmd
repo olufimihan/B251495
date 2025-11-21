@@ -5,63 +5,113 @@ date: "2025-10-31"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE)
 ```
 
 ## R Markdown
 
-#### Has the COVID-19 pandemic influenced antidepressant prescribing patterns during the Freshers' season (September-October) across Scottish health boards?
+#### Has the COVID-19 pandemic influenced antidepressant prescribing patterns during the winteseason (September-October) across Scottish health boards?
 
-## Winter season 
+## Winter season
+
 ## scotishcensusgov
-
 
 #Join the data boards
 
-#I loaded september to october data boards from 2017 - 2023 to represent the freshers season then I merged the health boards 
-#I summarise total antidepressant prescriptions per Freshers year and plotted the graph to see the trend 
-#Looked at pre coviid , during covid and after covid trend to see if there has been any impact or association
-```{r}
+I loaded september to october data boards from 2017 - 2023 to represent the freshers season then I merged the health boards #I summarise total antidepressant prescriptions per Freshers year and plotted the graph to see the trend #Looked at pre coviid , during covid and after covid trend to see if there has been any impact or association
+
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(here) # directory stucture
 library(gt) # tables
 library(janitor) # cleaning data
 library(ggplot2) # plotting graph
+library(sf) # to read in map data 
+library(readxl) # to read in map data
+library(plotly) # to make interactive
 ```
 
 loading a large amount of data in a shorter time period by downloading and using the mapdfr function (data from 2017-2023)
-```{r}
-files <- list.files(here("data", "winter_data"), pattern = "csv")
 
+```{r message=FALSE, warning=FALSE}
+files <- list.files(here("data", "winter_data"), pattern = "csv")
 winter_data <- files %>% 
-  map_dfr(~read_csv(here("data", "winter_data", .)))
+  map_dfr(~read_csv(here("data", "winter_data", .))) %>% 
+clean_names()
 ```
 
-clean up data and filter for the sections you want 
-```{r}
+clean up data and filter for the sections you want
+
+```{r message=FALSE, warning=FALSE}
 filtered_winter_data <- winter_data %>% 
-  clean_names() %>% 
-filter(str_starts(bnf_item_code,"0403")) #antidepressant code is 0403
-filtered_winter_data <- filtered_winter_data %>% 
-  mutate(year = as.numeric(substr(paid_date_month,1,4)), month = as.numeric(substr(paid_date_month,5,6)))#separates the date into years and month so that i can group winter sections
-filtered_winter_data <- filtered_winter_data %>% 
+filter(str_starts(bnf_item_code,"0403")) %>%  #antidepressant code is 0403
+  mutate(year = as.numeric(substr(paid_date_month,1,4)), month = as.numeric(substr(paid_date_month,5,6))) %>% #separates the date into years and month so that i can group winter sections
   mutate(winter_year=case_when(month == 12 ~ year + 1, 
 month %in% c(1,2) ~ year) )#makes a new column to group the winter years 
+
+filtered_winter_data <- filtered_winter_data %>% 
+  unite("healthboards",hbt2014,hbt,sep = "_")#so some of my data healthboard codes were under the name hbt_2014 AND another was hbt so i had to merge the column so all the healthboard columns fall under one
+
+  filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthboards) 
+    filtered_winter_data$healthboards <-
+      gsub("_","",filtered_winter_data$healthboards)#had to remove some NA characters and '_' characters
+
 ```
+
 Graph 1
 
-```{r}
+```{r message=FALSE, warning=FALSE}
+
 winter_years_data <- filtered_winter_data %>% 
   group_by(winter_year) %>% 
   summarise(total_items=sum(number_of_paid_items,na.rm = TRUE))
 
-  ggplot(winter_years_data,aes(x=winter_year,y=total_items)) +
-  geom_line(linewidth=0.7,colour = "blue") +
-    geom_point(size=2)+
-    scale_x_continuous(breaks=2017:2023) +
- labs(title="Antidepressant Prescriptions During Winter",x="Year",y="Total Antidepressant Prescriptions") +
+plot <- ggplot(winter_years_data, aes(x = winter_year)) +
+  geom_col(aes(y = total_items), fill = "lightblue", alpha = 0.7) +   # bar chart
+  geom_line(aes(y = total_items), linewidth = 1, colour = "darkblue") +  # line
+  geom_point(aes(y = total_items), size = 2, colour = "darkblue") +
+  scale_x_continuous(breaks = unique(winter_years_data$winter_year)) +
+  labs(
+    title = "Winter Antidepressant Prescriptions (Bar + Trend Line)",
+    x = "Winter Year",
+    y = "Total Antidepressant Prescriptions"
+  ) +
   theme_minimal()
+ggplotly(plot)
+
+```
+
+```{r message=FALSE, warning=FALSE}
+population <- readxl::read_excel(here("data","population.xlsx"), skip=10) %>% 
+  clean_names() %>% 
+  group_by(x2,all_people) %>% 
+summarise () %>% 
+  filter(!is.na(all_people))
+
+filtered2_winter_data <- filtered_winter_data %>% 
+  group_by(healthboards,bnf_item_code,paid_quantity,winter_year) %>% 
+summarise()
+
+filtered2_winter_data <- filtered2_winter_data %>% 
+  cross_join(population)
 ```
 
 
+SIMD
+```{r message=FALSE, warning=FALSE}
+SIMD <- readxl::read_excel(here("data","SIMD.xlsx")) %>% 
+  clean_names() # loading excel data 
+    
+```
 
+
+questions : 
+not sure the best way to displa my original data ?
+github - how to get rid of the signs 
+1- overall national trend (use original graph)
+2- i want to show the variation between different regions using healthboards
+3- link it to deprevation and look at prescriptions per person
+4- can i do a map that shows pre covid and post covid side by side would that count as one
+5- voilin plot across differet SIMDs to compare 
+smaller unit of data - gp practice (postcode that links to SIMD)
+PATCHWORK - MAPS TOGETHETE
