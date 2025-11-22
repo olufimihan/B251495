@@ -29,6 +29,8 @@ library(ggplot2) # plotting graph
 library(sf) # to read in map data 
 library(readxl) # to read in map data
 library(plotly) # to make interactive
+library(viridis)
+
 ```
 
 loading a large amount of data in a shorter time period by downloading and using the mapdfr function (data from 2017-2023)
@@ -61,23 +63,20 @@ filtered_winter_data <- filtered_winter_data %>%
 Graph 1
 
 ```{r message=FALSE, warning=FALSE}
-
 winter_years_data <- filtered_winter_data %>% 
   group_by(winter_year) %>% 
   summarise(total_items=sum(number_of_paid_items,na.rm = TRUE))
 
-plot <- ggplot(winter_years_data, aes(x = winter_year)) +
-  geom_col(aes(y = total_items), fill = "lightblue", alpha = 0.7) +   # bar chart
-  geom_line(aes(y = total_items), linewidth = 1, colour = "darkblue") +  # line
-  geom_point(aes(y = total_items), size = 2, colour = "darkblue") +
-  scale_x_continuous(breaks = unique(winter_years_data$winter_year)) +
-  labs(
-    title = "Winter Antidepressant Prescriptions (Bar + Trend Line)",
-    x = "Winter Year",
-    y = "Total Antidepressant Prescriptions"
-  ) +
+plot <- ggplot(winter_years_data,aes(x=winter_year,y=total_items)) +
+  geom_line(linewidth=0.7,colour = "blue") +
+  geom_point(size=2)+
+  scale_x_continuous(breaks=2017:2023) +
+  labs(title="Antidepressant Prescriptions During Winter Season",x="Year",y="Total Antidepressant Prescriptions") +
   theme_minimal()
+  
 ggplotly(plot)
+
+#write a code talking about the zoomed in changes and reference why you dudnt go from 0
 
 ```
 
@@ -89,29 +88,66 @@ summarise () %>%
   filter(!is.na(all_people))
 
 filtered2_winter_data <- filtered_winter_data %>% 
-  group_by(healthboards,bnf_item_code,paid_quantity,winter_year) %>% 
-summarise()
+  group_by(healthboards,bnf_item_code,paid_quantity,winter_year,gp_practice) %>% 
+summarise(total_paid = sum(paid_quantity, na.rm =TRUE))
 
 filtered2_winter_data <- filtered2_winter_data %>% 
   cross_join(population)
 ```
 
-
 SIMD
+
 ```{r message=FALSE, warning=FALSE}
 SIMD <- readxl::read_excel(here("data","SIMD.xlsx")) %>% 
   clean_names() # loading excel data 
+filtered_SIMD <- SIMD %>% 
+  group_by(simd2020v2_quintile,h_bcode,h_bname) %>% 
+  summarise()
+
+filtered_SIMD <- filtered_SIMD %>% 
+  rename(healthboards = h_bcode)
+
+deprived_data <- filtered2_winter_data %>% 
+  full_join(filtered_SIMD,by = "healthboards")
     
 ```
 
+CHAT
 
-questions : 
-not sure the best way to displa my original data ?
-github - how to get rid of the signs 
-1- overall national trend (use original graph)
-2- i want to show the variation between different regions using healthboards
-3- link it to deprevation and look at prescriptions per person
-4- can i do a map that shows pre covid and post covid side by side would that count as one
-5- voilin plot across differet SIMDs to compare 
-smaller unit of data - gp practice (postcode that links to SIMD)
-PATCHWORK - MAPS TOGETHETE
+```{r}
+#summarise totals per winter year per practice
+winter_year_summary <- filtered2_winter_data %>% 
+  group_by (healthboards, gp_practice, winter_year) %>% 
+  summarise(total_paid = sum(paid_quantity, na.rm = TRUE))
+# average across winter years
+winter_year_average <- winter_year_summary %>% 
+  group_by(healthboards,gp_practice) %>%
+  summarise(avg_paid_over_winters = mean(total_paid, na.rm = TRUE))
+#SIMD
+winter_with_simd <- winter_year_average %>% 
+  left_join(filtered_SIMD, by="healthboards") %>% 
+  filter(!is.na(simd2020v2_quintile))
+```
+
+CHAT2
+
+```{r}
+box <- ggplot(winter_with_simd,
+       aes(x=factor(simd2020v2_quintile),
+           y=avg_paid_over_winters,
+           fill=factor(simd2020v2_quintile))) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete=TRUE, alpha=0.6) +
+  geom_jitter(size=0.4, alpha=0.9) +
+  theme_minimal() +
+  labs(
+    title="Average Winter Antidepressant Prescriptions per Practice by SIMD Quintile",
+    x="SIMD Quintile (1 = Most Deprived)",
+    y="Avg prescriptions per practice (winter seasons)"
+  )
+ggplotly(box)
+```
+
+questions : not sure the best way to displa my original data ? github - how to get rid of the signs 1- overall national trend (use original graph) 2- i want to show the variation between different regions using healthboards 3- link it to deprevation and look at prescriptions per person 4- can i do a map that shows pre covid and post covid side by side would that count as one 5- voilin plot across differet SIMDs to compare smaller unit of data - gp practice (postcode that links to SIMD) PATCHWORK - MAPS TOGETHETE reference line to show the split between precovid, covid and postcovid
+
+every dot is a gp practice - gp practice - dataset - adressess (assessment prep) voilin plot if messy add transperency open data use quintiles for voilin plot do a code that says if not installed install and load packages
