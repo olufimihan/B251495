@@ -54,8 +54,7 @@ month %in% c(1,2) ~ year) )#makes a new column to group the winter years
 
 filtered_winter_data <- filtered_winter_data %>% 
   unite("healthboards",hbt2014,hbt,sep = "_")#so some of my data healthboard codes were under the name hbt_2014 AND another was hbt so i had to merge the column so all the healthboard columns fall under one
-
-  filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthboards) 
+filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthboards) 
     filtered_winter_data$healthboards <-
       gsub("_","",filtered_winter_data$healthboards)#had to remove some NA characters and '_' characters
 
@@ -88,37 +87,33 @@ population <- readxl::read_excel(here("data","population.xlsx"), skip=10) %>%
   clean_names() %>% 
   select(x2,all_people) %>% 
   filter(!is.na(all_people)) %>% 
-  rename(h_bname = x2)
+  rename(h_bname = "x2",hb_population = "all_people") %>% 
+filter(!str_detect(hb_population,"Cells"))
 
 filtered2_winter_data <- filtered_winter_data %>% 
-  group_by(healthboards,bnf_item_code,winter_year,gp_practice) %>% summarise(total_paid = sum(paid_quantity, na.rm =TRUE))
+  group_by(healthboards,bnf_item_code,winter_year,gp_practice) %>% 
+  summarise(total_paid = sum(paid_quantity, na.rm =TRUE))
 
 ```
-
+retry reading in data 
 ```{r}
+filtered3_winter_data <- filtered_winter_data %>% 
+  group_by(healthboards,winter_year,paid_date_month,gp_practice) %>% 
+  summarise(paid_quantity = sum(paid_quantity,na.rm=TRUE)) 
+
 SIMD <- readxl::read_excel(here("data","SIMD.xlsx")) %>% 
-  clean_names() # loading excel data 
-filtered_SIMD <- SIMD %>% 
-  group_by(simd2020v2_quintile,h_bcode,h_bname) %>% 
-  summarise()
+  clean_names() 
 
-filtered_SIMD <- filtered_SIMD %>% 
-  rename(healthboards = h_bcode)
-
-Overall_SIMD_winter <- filtered2_winter_data %>% 
-  full_join(filtered_SIMD,by = "healthboards")
-'relationship = "many-to-many"'
-
-Overall_SIMD_population_winter <- Overall_SIMD_winter %>% 
-  full_join(population,by="h_bname")
-
+combined_pop_simd <- SIMD %>% 
+  full_join(filtered3_winter_data,join_by(h_bcode == healthboards)) %>% 
+  left_join(population,join_by(h_bname == h_bname))
 ```
-
+retry making map
 ```{r}
-
-antidepressant_per_head <- Overall_SIMD_population_winter %>% 
-  group_by(healthboards,h_bname,winter_year) %>% 
-  summarise(quantity_per_head = sum(total_paid)/mean(all_people))
+combined_pop_simd2 <- combined_pop_simd %>% 
+  group_by(winter_year,h_bname,h_bcode) %>% 
+    summarise(quantity_per_head = sum(paid_quantity)/mean(hb_population)) %>% 
+    filter(!is.na(h_bname)) 
 
 ### map 
 NHS_healthboards <- st_read(here( "data", "Week6_NHS_HealthBoards_2019.shp")) %>% 
@@ -126,14 +121,11 @@ clean_names() %>%
   rename(h_bname = hb_name)
 
 # Join spatial data with falls_admissions_75_summary
-mapped_data <- antidepressant_per_head %>%
+mapped_data <- combined_pop_simd2 %>%
   full_join(NHS_healthboards,by="h_bname") %>% 
   st_as_sf()
-
-
 #CLAUDE : 
   library(ggiraph)
-
 plot_map <- mapped_data %>% 
   ggplot() + 
   geom_sf_interactive(  # Changed from geom_sf
@@ -160,11 +152,21 @@ plot_map <- mapped_data %>%
 
 interactive_map <- girafe(ggobj = plot_map)  # Changed from ggplotly
 interactive_map
+
 ```
 
-
-TRY PLOT BOX BY 1000 INSTEAD OF 
+retry making boxplot
 ```{r}
+files <- list.files(here("data", "winter_population"), pattern = "csv")
+winter_population <- files %>% 
+  map_dfr(~read_csv(here("data", "winter_population", .))) %>% 
+clean_names()
+
+summary_combined <- combined_pop_simd %>% 
+  group_by(simd2020v2_quintile,h_bname,gp_practice,winter_year) %>% 
+  summarise(avg_paid_over_winters = mean(sum(paid_quantity))) %>% 
+    filter(!is.na(simd2020v2_quintile))
+
 files <- list.files(here("data", "winter_population"), pattern = "csv")
 winter_population <- files %>% 
   map_dfr(~read_csv(here("data", "winter_population", .))) %>% 
@@ -175,175 +177,153 @@ filtered_winter_population <- winter_population %>%
   mutate(year = as.numeric(substr(date,1,4))) %>% 
   rename(healthboards = hb) %>% 
 rename(winter_year = year)
-
-  filtered_winter_population$winter_year <- gsub("2020","2019",filtered_winter_population$winter_year) 
+ filtered_winter_population$winter_year <- gsub("2020","2019",filtered_winter_population$winter_year) 
   
   filtered_winter_population$winter_year <- gsub("2023","2022",filtered_winter_population$winter_year) 
-  
-summary_winter_with_simd <- Overall_SIMD_winter %>% 
+
+  summary_winter_with_simd <- summary_combined %>% 
   filter(winter_year %in% c("2019","2022")) %>% 
   rename(practice_code = gp_practice) %>% 
   rename(winter_year = winter_year)
+  
+  summary_winter_with_simd <- summary_winter_with_simd %>%
+  mutate(winter_year = as.numeric(winter_year))
 
-#round 2
-try_filtered_data <- filtered2_winter_data %>% 
-  filter(winter_year %in% c("2019","2022")) %>% 
-    rename(practice_code = gp_practice) %>% 
-  rename(winter_year = winter_year)
+filtered_winter_population <- filtered_winter_population %>%
+  mutate(winter_year = as.numeric(winter_year))
 
-filtered_winter_population$winter_year <- as.numeric(filtered_winter_population$winter_year)
-try_filtered_data$winter_year <- as.numeric(try_filtered_data$winter_year)
+joined_data <- summary_winter_with_simd %>% 
+  full_join(filtered_winter_population,join_by (winter_year == winter_year, practice_code == practice_code))
 
-boxplot2.0 <- left_join(filtered_winter_population,try_filtered_data, by=c("healthboards","practice_code","winter_year")) 
-
-boxplot2.5 <- left_join(boxplot2.0,filtered_SIMD, by=c("healthboards"))
-
-
-boxplot3 <- boxplot2.5 %>%   
-group_by(healthboards,practice_code,all_ages,winter_year,simd2020v2_quintile,h_bname) %>%
-  summarise(avg_paid_over_winters = mean(total_paid, na.rm = TRUE))  %>% 
-  mutate(avg_per_1000=(avg_paid_over_winters/all_ages)*1000,
-         year_label=factor(winter_year,
+final_boxplot <- joined_data %>% 
+  group_by(simd2020v2_quintile,h_bname,practice_code,winter_year) %>% 
+  reframe(avg_per_1000=(avg_paid_over_winters/all_ages)*1000,
+            year_label=factor(winter_year,
                            level = c(2019,2022),
                            labels = c("Pre-COVID (2019)","Post-COVID (2022)")))
 
-```
- 
- BOX PLOT FINAL 
-```{r}
-hb_points <- boxplot3 %>% 
-  filter(!is.na(avg_per_1000)) %>%
-  group_by(simd2020v2_quintile, h_bname, winter_year) %>% 
-  summarise(hb_avg = mean(avg_per_1000, na.rm = TRUE), .groups = "drop") %>% 
-  mutate(
-    year_label = factor(
-      winter_year,
-      levels = c(2019, 2022),
-      labels = c("Pre-COVID (2019)", "Post-COVID (2022)")) )
+#chat 
+hb_points <-final_boxplot %>% 
+  group_by(simd2020v2_quintile,h_bname) %>%   summarise(hb_avg = mean(avg_per_1000, na.rm = TRUE))
 
-# Plot with fixed legend
-box <- ggplot(boxplot3 %>% filter(!is.na(avg_per_1000)), 
-              aes(x = factor(simd2020v2_quintile), y = avg_per_1000)) +
+#chat 
+
+final_boxplot <- final_boxplot %>% 
+  mutate(simd2020v2_quintile = factor(simd2020v2_quintile))
+hb_points <- hb_points %>% 
+  mutate(simd2020v2_quintile = factor(simd2020v2_quintile))
+
+
+box2 <- final_boxplot %>%
+  ggplot(aes(x = factor(simd2020v2_quintile), y = avg_per_1000, 
+             fill = factor(simd2020v2_quintile))) +
   
-  geom_boxplot(aes(fill = factor(simd2020v2_quintile)),
-               outlier.shape = NA,
-               colour = "black",
-               alpha = 0.5) +
-  
-  stat_summary(fun = median, geom = "crossbar",
-               width = 0.5, color = "black", linewidth = 0.6, fatten = 1) +
-  
+  geom_boxplot(outlier.shape = NA) +   # hide boxplot outliers
   geom_point(data = hb_points,
-             aes(y = hb_avg, color = h_bname,
+             aes(x = factor(simd2020v2_quintile), y = hb_avg,
                  text = paste0("Health Board: ", h_bname, "<br>",
                                "SIMD: ", simd2020v2_quintile, "<br>",
                                "Avg per 1000: ", round(hb_avg, 1))),
-             position = position_jitter(width = 0.2, seed = 42),
+             color = "red",
              size = 2,
-             alpha = 0.8) +
+             alpha = 0.7,
+             position = position_jitter(width = 0.2)) +
   
-  scale_fill_viridis_d(option = "C", alpha = 0.4, guide = "none") +  # Hide SIMD legend
-  scale_color_viridis_d(option = "D", name = "Health Board") +  # Clean health board legend
+  scale_fill_viridis(discrete = TRUE, alpha = 0.6) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  coord_cartesian(ylim = c(5000, 20000000)) +
   
-  facet_wrap(~year_label) +
-  coord_cartesian(ylim = c(0, 2000)) +
-  
-  theme_light() +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.y = element_blank(),
-    legend.position = "right",
-    legend.text = element_text(size = 9)
-  ) +
-  labs(
-    title = "Average Winter Antidepressant Prescriptions by SIMD Quintile",
+  theme_minimal() +
+  theme(legend.position = "none") +
+  facet_wrap(~winter_year) +
+  labs(title = "Average Winter Antidepressant Prescriptions Per Practice by SIMD Quintile",
+       x = "SIMD Quintile (1 = Most Deprived)",
+       y = "Avg prescriptions per 1000")
+
+# Interactive plot
+ggplotly(box2, tooltip = "text")
+
+
+
+#just boxplot
+
+box2 <- final_boxplot %>% 
+  ggplot(aes(x=simd2020v2_quintile,y=avg_per_1000, fill= factor(simd2020v2_quintile)))+
+geom_boxplot() + geom_point(data = hb_points,
+           aes(x = factor(simd2020v2_quintile),
+               y = hb_avg),
+           color = "red",
+           size = 2,
+           alpha = 0.7,
+           position = position_jitter(width = 0.2)) +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6)+
+  scale_y_continuous(labels = scales::label_comma()) +
+  coord_cartesian(ylim = c(5000,20000000))+
+  geom_jitter_interactive(color = "lightblue",size=0.4,alpha=0.9)+
+  theme_minimal()+
+  theme(legend.position = "none")+
+  facet_wrap(~winter_year) + 
+  labs(title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
     x = "SIMD Quintile (1 = Most Deprived)",
-    y = "Avg prescriptions per 1000"
-  )
+    y = "Avg prescriptions per 1000")
 
-ggplotly(box, tooltip = "text")
+ggplotly(box2)
 ```
- 
- 
- 
-ridge lines
+retry lollipop
 ```{r}
-box <- ggplot(boxplot3,
-       aes(x=factor(simd2020v2_quintile),
-           y=avg_per_1000,
-           fill=factor(simd2020v2_quintile))) +
-  geom_boxplot(outlier.shape = 21,
-               outlier.size = 1,
-               outlier.stroke = 0.5,
-               linewidth = 0.8,
-               colour = "black",
-               alpha = 0.7) +
+lollipop_data <- combined_pop_simd %>% 
+  filter(winter_year %in% c("2019","2022")) %>% 
+  group_by(simd2020v2_quintile,h_bname,winter_year) %>% 
+    summarise(total_paid = sum(paid_quantity,na.rm=TRUE),avg_SIMD = mean(simd2020v2_quintile, na.rm=TRUE)) %>% 
+mutate(period=ifelse(winter_year==2019, "pre", "post")) 
+
+#cht
+
+lollipop1_summary <- lollipop_data %>%
   
-  # HEALTH BOARD POINTS (with tooltip)
-  geom_point(data = hb_points,
-    aes(x = factor(simd2020v2_quintile),
-      y = hb_avg,
-      text = paste0( "Health Board: ", h_bname, "<br>",
-        "SIMD: ", simd2020v2_quintile, "<br>",
-        "Avg per 1000: ", round(hb_avg, 1), "<br>" )),
-    color = "red",
-    size = 2,
-    alpha = 0.7,
-    position = position_jitter(width = 0.2)) +
-  scale_y_continuous(limits = c(0, 2000),
-                     labels = scales::label_number()) +
-  scale_fill_viridis(discrete = TRUE, alpha = 0.9) +
-  theme(panel.background = element_rect(fill = "lightblue",
-                                    colour = "lightblue",
-                                    size = 0.5)) +
-  labs( title = "Average Winter Antidepressant Prescriptions per Practice by SIMD Quintile",
-    x = "SIMD Quintile (1 = Most Deprived)",
-    y = "Avg prescriptions per practice (per 1000)") +
-   facet_wrap(~ year_label)
-
-ggplotly(box, tooltip = "text")
-
-```
-
-
-NEW PERCENTAGE CHANGE
-
-```{r}
-lolipop_data <- boxplot2.5 %>% 
-  select(h_bname, total_paid, simd2020v2_quintile, winter_year) %>% 
-  mutate(period = ifelse(winter_year == 2019, "pre", "post"))
-# Step 2: Aggregate by Health Board + SIMD + period
-lolipop_summary <- lolipop_data %>%
-  group_by(h_bname, simd2020v2_quintile, period) %>%
-  summarise(total_prescribing = sum(total_paid, na.rm = TRUE)) %>%
-# Step 3: Pivot wider: pre vs post
-  pivot_wider(names_from = period,
-    values_from = total_prescribing) %>%
-# Step 4: Calculate percentage change
-  mutate(pct_change = ((post - pre) / pre) * 100) %>%
-# Step 5: Rank / reorder by SIMD (1 = most deprived)
-  arrange(simd2020v2_quintile) %>%
+  # Step 1: Aggregate prescribing for each HB × period
+  group_by(h_bname, period) %>%
+  summarise(
+    total_prescribing = sum(total_paid, na.rm = TRUE),
+    avg_simd = mean(simd2020v2_quintile, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  
+  # Step 2: Remove HBs with missing names
+  filter(!is.na(h_bname)) %>%
+  
+  # Step 3: Pivot pre/post
+  tidyr::pivot_wider(
+    names_from = period,
+    values_from = total_prescribing
+  ) %>%
+  
+  # Step 4: Calculate percentage change
+  mutate(
+    pct_change = ((post - pre) / pre) * 100
+  ) %>%
+  
+  # Step 5: Rank health boards by average SIMD
+  arrange(avg_simd) %>%
   mutate(h_bname = factor(h_bname, levels = unique(h_bname)))
-#plot
- pct_lollipop <- ggplot(lolipop_summary, aes(x = h_bname, y = pct_change)) +
-  geom_segment(aes(x = h_bname, xend = h_bname, y = 0, yend = pct_change), 
-               color = "skyblue") +
-  geom_point(color = "blue", size = 4, alpha = 0.6) +
+
+
+pct_lollipop <-lollipop1_summary %>% 
+  ggplot () +
+  geom_segment(aes(x=h_bname, xend=h_bname, y=0, yend = pct_change), color = "skyblue")+
+  geom_point(aes(x = h_bname, y = pct_change),color = "blue", size=3, alpha = 0.6) +
   theme_light() +
-  coord_flip() +
-  theme(
-    panel.grid.major.y = element_blank(),
+  coord_flip() +  
+  theme(panel.grid.major.y = element_blank(),
     panel.border = element_blank(),
     axis.ticks.y = element_blank()) +
   labs( title = "Percentage Change in Prescribing per Health Board",
     x = "Health Board",
     y = "Percentage Change (%)")
- 
    ggplotly(pct_lollipop)
    
+   
 ```
-
 
 questions : not sure the best way to displa my original data ? github - how to get rid of the signs 1- overall national trend (use original graph) 2- i want to show the variation between different regions using healthboards 3- link it to deprevation and look at prescriptions per person 4- can i do a map that shows pre covid and post covid side by side would that count as one 5- voilin plot across differet SIMDs to compare smaller unit of data - gp practice (postcode that links to SIMD) PATCHWORK - MAPS TOGETHETE reference line to show the split between precovid, covid and postcovid
 
