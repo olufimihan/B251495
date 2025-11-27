@@ -121,7 +121,7 @@ combined_pop_simd <- SIMD %>%
 ```
 
 *Figure 2*
-```{r warning=FALSE,message=FALSE,fig.width=10,fig.height=4,out.width='100%'}
+```{r warning=FALSE,message=FALSE,fig.width=10,fig.height=6,out.width='100%'}
 #| fig-align: center
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
 
@@ -168,7 +168,7 @@ theme(strip.text = element_text(size=10, face="bold"),
 plot.title = element_text(face="bold", size=12),
 plot.subtitle = element_text(size=8))
 # Convert to interactive map
-interactive_map <- girafe(ggobj = plot_map, width_svg = 10, height_svg = 3)
+interactive_map <- girafe(ggobj = plot_map, width_svg = 10, height_svg = 6)
 interactive_map
 ```
 
