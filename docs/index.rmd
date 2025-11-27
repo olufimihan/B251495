@@ -48,9 +48,7 @@ library(sf) # to read in map data
 library(readxl) # to read in map data
 library(plotly) # to make interactive
 library(viridis) # colour palette for map
-library(ggiraph)
-library(knitr)
-
+library(ggiraph) # make ggplot2 graphs interactive
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -76,7 +74,7 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 ------------------------------------------------------------------------
 
-#Data wrangling{#**Figure 1**}
+# Data wrangling {#Figure 1}
 
 ```{r warning=FALSE}
 #| fig-align: center
@@ -101,7 +99,7 @@ linetype = "solid", colour = "brown") + geom_vline(xintercept = 2022,
 linetype = "solid", colour = "brown") + #reference lines to mark COVID-related winters
   scale_x_continuous(breaks=2017:2023) + #ensures all years appear on x-axis
   labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
-  theme_minimal() )#thiscode suppresses warnings
+  theme_minimal(base_size = 10))#thiscode suppresses warnings
   
 ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
 ```
@@ -131,7 +129,7 @@ combined_pop_simd <- SIMD %>%
 
 ------------------------------------------------------------------------
 
-# Data wrangling {#**Figure 2**}
+# Data wrangling {#Figure 2}
 
 ```{r warning=FALSE}
 #| fig-align: center
@@ -144,7 +142,7 @@ combined_pop_simd <- SIMD %>%
 hb_prescribing <- filtered_winter_data %>%
   filter(winter_year >= 2019) %>%
   group_by(healthboards, winter_year) %>%
-  summarise(total_paid = sum(paid_quantity, na.rm = TRUE), .groups="drop")
+  summarise(total_paid = sum(paid_quantity, na.rm = TRUE))
 #clean SIMD data (keep unique health board codes and names)
 simd_clean <- SIMD %>% select(h_bcode, h_bname) %>% distinct()
 #combine with prescribing data with SIMD and population data,calculate prescriptions per head
@@ -174,8 +172,8 @@ plot_map <- retry_mapped_data %>%
   labs(title="Antidepressant Prescriptions per Head",
        subtitle="By Health Board and Winter Year") +
   facet_wrap(~winter_year) + # separate maps per year
-  theme_void() +
-  theme(strip.text = element_text(size=12, face="bold"),
+  theme_void(base_size = 10) +
+  theme(strip.text = element_text(size=10, face="bold"),
         plot.title = element_text(face="bold", size=16),
         plot.subtitle = element_text(size=10))
 #convert to interactive map
@@ -184,7 +182,7 @@ interactive_map <- girafe(ggobj = plot_map);interactive_map
 
 ------------------------------------------------------------------------
 
-#Data Wrangling{#**Figure 3**}
+#Data Wrangling{# Figure 3 }
 
 ```{r message=FALSE, warning=FALSE}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
@@ -241,9 +239,9 @@ The boxplot shows no strong socioeconomic gradient in antidepressant prescribing
 </div>
 ------------------------------------------------------------------------
 
-# Data wrangling {#**Figure 4**}
+# Data wrangling {#Figure 4}
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE,fig.width=8,fig.height=10}
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
@@ -299,8 +297,12 @@ gt() %>%
 tab_header(title=md("**Antidepressant Prescribing** Changes by Health Board **Before and After COVID-19** (2019-2022)"),subtitle=md("with *deprivation indicators*")) %>% 
 tab_spanner(label="average total prescriptions",columns = c('Pre-COVID (2019)','Post-COVID (2022)')) %>% 
 tab_spanner(label="Deprivation",columns = c('Avg SIMD Quintile','% in Deprived Areas (Q1-Q2)')) %>% 
+  tab_options(
+    table.font.size = px(10),
+    data_row.padding = px(2),
+    heading.padding = px(2) ) %>% 
    tab_footnote(footnote = md("**Avg SIMD Quintle** 1 represents most deprived areas in scotland ")) %>%
-tab_caption(md("The table shows that Glasgow and Lanarkshire had the largest increases in antidepressant prescribing after COVID-19. This cannot be explained by average deprivation alone, but becomes clearer when considering that both regions have the highest concentrations of people living in the most deprived areas. Rural and island boards showed far smaller increases, suggesting that urbanisation and population density played a bigger role than deprivation in driving prescribing changes during COVID."))
+tab_caption(md("The table shows that Glasgow and Lanarkshire had the largest increases in antidepressant prescribing after COVID-19. This cannot be explained by average deprivation alone, but becomes clearer when considering that both regions have the highest concentrations of people living in the most deprived areas. Rural and island boards showed far smaller increases, suggesting that urbanisation and population density played a bigger role than deprivation in driving prescribing changes during COVID.")) 
 ```
 
 *** 
