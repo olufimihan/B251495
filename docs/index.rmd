@@ -1,5 +1,5 @@
 ---
-title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation?" 
+title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation? 2" 
 output: 
   html_document:
     theme: lumen
@@ -120,13 +120,7 @@ combined_pop_simd <- SIMD %>%
 
 ------------------------------------------------------------------------
 *Figure 2*
-```{r warning=FALSE}
-#| fig-align: center
-#| fig-width: 6
-#| fig_height: 6
-#| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
-#| message: false
-
+```{r warning=FALSE,message=FALSE}
 #sum antidepressant prescriptions per health board and winter year (from 2019 onwards)
 hb_prescribing <- filtered_winter_data %>%
   filter(winter_year >= 2019) %>%
@@ -166,7 +160,8 @@ plot_map <- retry_mapped_data %>%
         plot.title = element_text(face="bold", size=12),
         plot.subtitle = element_text(size=8))
 #convert to interactive map
-interactive_map <- girafe(ggobj = plot_map);interactive_map
+interactive_map <- girafe(ggobj = plot_map)
+interactive_map
 ```
 
 ------------------------------------------------------------------------
