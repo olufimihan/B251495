@@ -76,6 +76,8 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 #| fig-align: center
 #| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
 
+library(dplyr)
+library(scales)
 #summarise total antidepressant prescriptions for each winter year
 winter_years_data <- filtered_winter_data %>% 
   group_by(winter_year) %>% 
@@ -93,9 +95,14 @@ linetype = "solid", colour = "brown") + #reference lines to mark COVID-related w
   scale_x_continuous(breaks=2017:2023) + #ensures all years appear on x-axis
   labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
   theme_minimal(base_size = 10))#thiscode suppresses warnings
-ggplotly(plot,tooltip="text",height=250) #convert ggplot to interactive plotly object with tooltips
+interactive_plot <- ggplotly(plot,tooltip="text",height=250) #convert ggplot to interactive plotly object with tooltips
+interactive_plot
 ```
-<!-- Button to open fullscreen modal --> <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#figure1Modal"> See Figure 1 in Full Screen </button> <!-- Modal --> <div class="modal fade" id="figure1Modal" tabindex="-1"> <div class="modal-dialog modal-dialog-centered p-8" style="max-width: 90%"> <div class="modal-content p-4"> interactive_plot </div> </div> </div> ```
+<!-- Button to open fullscreen modal --> <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#figure1Modal"> See Figure 1 in Full Screen </button> <!-- Modal --> <div class="modal fade" id="figure1Modal" tabindex="-1"> <div class="modal-dialog modal-dialog-centered p-8" style="max-width: 95%"> <div class="modal-content p-4"> # Render the same interactive plot inside the modal interactive_plot </div> </div> </div> 
+```{r, echo=FALSE, warning=FALSE, out.width="100%"}
+interactive_plot
+```
+</div> </div> </div> 
 ------------------------------------------------------------------------
 
 ```{r message=FALSE, warning=FALSE}
