@@ -309,4 +309,13 @@ Overall, although prescribing did rise during COVID-19, the trend shown in Figur
 
 *Next Steps* Future work could be done to link prescribing levels to practice level SIMD and demographic characteristics to better understand drivers of change. Work should be done analysing antidepressant prescriptions all year round and compare it with the winter-only dataset used here, to determine whether truly seasonal peaks exist and whether winter peaks changed post-COVID. Additionally, applying time-series modelling would confirm whether the post COVID rise represents a temporary shock or a long term behavioural shift in prescribing patterns.
 
-**References** National Records of Scotland (2022). Scottish Census. Scottish Census Web Portal. (<https://www.scotlandscensus.gov.uk/webapi/jsf/tableView/tableView.xhtml>)(Accessessed: 26 November 2023) Public Health Scotland (2025). Prescriptions in the Community. NHS Scotland Open (<https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community>)(Accessessed: 26 November 2023) Scottish Government (2020). Scottish Index of Multiple Deprivation 2020v2 data zone lookup file. Scottish Government Supporting Documents. [https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed](https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed){.uri}: 26 November 2023) UK Government (2025). NHS Health Boards Scotland. Data.gov.uk.https://www.data.gov.uk/dataset/27d0fe5f-79bb-4116-aec9-a8e565ff756a/nhs-health-boards-scotland(Accessessed: 26 November 2023) Rosenthal, M.B. (2004). Seasonal Affective Disorder. In: Encyclopedia of Women’s Health. Springer, Boston, MA. [https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed](https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed){.uri}: 26 November 2023)
+**References** 
+National Records of Scotland (2022). Scottish Census. Scottish Census Web Portal. (<https://www.scotlandscensus.gov.uk/webapi/jsf/tableView/tableView.xhtml>)(Accessed: 26 November 2025)
+
+Public Health Scotland (2025). Prescriptions in the Community. NHS Scotland Open (<https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community>)(Accessed: 26 November 2025)
+
+Scottish Government (2020). Scottish Index of Multiple Deprivation 2020v2 data zone lookup file. Scottish Government Supporting Documents. [https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed](Accessed 26 November 2025) 
+
+UK Government (2025). NHS Health Boards Scotland. Data.gov.uk.https://www.data.gov.uk/dataset/27d0fe5f-79bb-4116-aec9-a8e565ff756a/nhs-health-boards-scotland(Accessed: 26 November 2025) 
+
+Rosenthal, M.B. (2004). Seasonal Affective Disorder. In: Encyclopedia of Women’s Health. Springer, Boston, MA. [https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed](https://doi.org/10.1007/978-0-306-48113-0_391(Accessed 26 November 202d)
