@@ -2,9 +2,9 @@
 title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation?" 
 output: 
   html_document:
-    theme: darkly
+    theme: lumen
     code-fold: true 
-    code_folding: show
+    code_folding: hide
     code_download: false
 date: "2025-10-31"
 ---
