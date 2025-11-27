@@ -30,11 +30,8 @@ Antidepressant medications were identified using the BNF item code prefix “040
 
 For the purpose of this study, the COVID-19 period is defined as March 2020 to June 2021, corresponding to the main period of national lockdowns. This places Winter 2019 as pre-COVID, Winter 2020/2021 as during COVID, and Winter 2022 as post-COVID.
 
-:::{.callout-gradient}
-:::{.callout-note}
- [Figure 1](#Figure1), [Figure 2](#Figure2),[Figure 3](#Figure3) are interactive - hover over the elements to see additional details.
-:::
-:::
+Figure1,Figure2,Figure3 are interactive - hover over the elements to see additional details.
+
 ------------------------------------------------------------------------
 
 ```{r message=FALSE, warning=FALSE}
@@ -74,8 +71,7 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 ------------------------------------------------------------------------
 
-# Figure 1: Data wrangling {#Figure1}
-
+*Figure 1*
 ```{r warning=FALSE,message=FALSE,fig.width=4,fig.height=3}
 #| fig-align: center
 #| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
@@ -124,9 +120,7 @@ combined_pop_simd <- SIMD %>%
 ```
 
 ------------------------------------------------------------------------
-
-# Figure 2: Data wrangling {#Figure2}
-
+*Figure 2*
 ```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3}
 #| fig-align: center
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
@@ -171,11 +165,12 @@ plot_map <- retry_mapped_data %>%
         plot.subtitle = element_text(size=8))
 #convert to interactive map
 interactive_map<-girafe(ggobj = plot_map,width_svg=5,height_svg=4)
+print(interactive_map)
 ```
 
 ------------------------------------------------------------------------
 
-# Figure 3: Data Wrangling {# Figure3}
+*Figure 3*
 ```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
@@ -228,9 +223,7 @@ ggplotly(box2, height=250)
 The boxplot shows no strong socioeconomic gradient in antidepressant prescribing across SIMD quintiles, with median rates remaining relatively flat in both 2019 and 2022. Although overall prescribing increased uniformly after COVID-19, greater variability and more extreme outliers in 2022 suggest widening differences between individual health boards or practices, rather than between deprivation groups.
 </div>
 ------------------------------------------------------------------------
-
-# Figure 4: Data wrangling {#Figure4}
-
+*Figure 4*
 ```{r message=FALSE, warning=FALSE, fig.width=4,fig.height=10} 
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
@@ -297,13 +290,13 @@ tab_caption(md("The table shows that Glasgow and Lanarkshire had the largest inc
 
 *** 
 **Conclusion**
-This analysis shows that antidepressant prescribing increased across almost all Scottish health boards after COVID-19, with the largest rises seen in Glasgow and Lanarkshire. However, average SIMD quintile did not explain these differences, as no clear deprivation gradient appeared before or after the pandemic [Figure 3](#Figure3).
+This analysis shows that antidepressant prescribing increased across almost all Scottish health boards after COVID-19, with the largest rises seen in Glasgow and Lanarkshire. However, average SIMD quintile did not explain these differences, as no clear deprivation gradient appeared before or after the pandemic Figure 3.
 
-When population-weighted deprivation was included, a clearer pattern emerged: health boards with the highest proportions of residents in the most deprived areas (Q1–Q2) experienced the greatest increases [Figure 4](#Figure 4). This suggests that COVID-19 may have intensified pre-existing mental health inequalities in large, urban, socioeconomically deprived regions.
+When population-weighted deprivation was included, a clearer pattern emerged: health boards with the highest proportions of residents in the most deprived areas (Q1–Q2) experienced the greatest increases Figure 4. This suggests that COVID-19 may have intensified pre-existing mental health inequalities in large, urban, socioeconomically deprived regions.
 
-This aligns with [Figure 2](#Figure2), which shows higher prescribing per head in central Scotland’s densely populated urban belt compared with more rural northern areas, highlighting the influence of population density and urbanisation.
+This aligns with Figure 2, which shows higher prescribing per head in central Scotland’s densely populated urban belt compared with more rural northern areas, highlighting the influence of population density and urbanisation.
 
-Overall, although prescribing did rise during COVID-19, the trend shown in [Figure 1](#Figure1) indicates that this increase was part of a longer-term upward trajectory rather than a sharp pandemic-specific surge.
+Overall, although prescribing did rise during COVID-19, the trend shown in Figure 1 indicates that this increase was part of a longer-term upward trajectory rather than a sharp pandemic-specific surge.
 
 *Limitations*
 Several limitations reduce the strength of these findings. Firstly, the data reflects prescribing volume, not whether the antidepressants were newly started or continued, so it may not directly truly represent true changes in mental health across deprivation levels.In addition, important confounding variables such as changes in healthcare access,remote consultations, and shifting service pressures durung COVID-19 potentially affecting the accuracy of the results.Finally, the analysis was only done at health board level, so findings cannot be generalised to individual gp practice levels so GP practices, and no conclusions can be made about patient-level experiences or need. 
