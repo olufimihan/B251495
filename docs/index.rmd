@@ -43,6 +43,7 @@ library(readxl) # to read in map data
 library(plotly) # to make interactive
 library(viridis) # colour palette for map
 library(ggiraph)
+library(knitr)
 
 ```
 
@@ -243,78 +244,67 @@ ggplotly(box2)
 **Figure 4**
 
 ```{r message=FALSE, warning=FALSE}
-
 #| fig-align: center
 #| fig-width: 6
 #| fig-height: 6
-#| fig.cap: "The lollipop chart highlights strong geographical inequalities in the impact of COVID-19 on antidepressant prescribing. Urban health boards(Lanarkshire and Greater Glasgow and clyde) show increases up to ten times greater than rural and island areas, suggesting that factors such as population density, service pressure, and differing pandemic experiences played a larger role than deprivation alone. message: false
+#| fig.cap: "The table shows that Glasgow and Lanarkshire had the largest increases in antidepressant prescribing after COVID-19. This cannot be explained by average deprivation alone, but becomes clearer when considering that both regions have the highest concentrations of people living in the most deprived areas. Rural and island boards showed far smaller increases, suggesting that urbanisation and population density played a bigger role than deprivation in driving prescribing changes during COVID."
+#| message: false
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
-  summarise(#weighted mean SIMD quintile (lower value = more deprived)
+  summarise(
+#weighted mean SIMD quintile (lower value = more deprived)
     avg_quintile = weighted.mean(simd2020v2_quintile, w = population, na.rm = TRUE),
 #percentage of population living in most deprived quintiles (Q1 & Q2)
-    pct_deprived = sum(population[simd2020v2_quintile <= 2], na.rm = TRUE) /sum(population, na.rm = TRUE) * 100,
+    pct_deprived = sum(population[simd2020v2_quintile <= 2], na.rm = TRUE) / 
+                   sum(population, na.rm = TRUE) * 100,
 #total population per health board (for reference)
-  total_pop = sum(population, na.rm = TRUE)
+    total_pop = sum(population, na.rm = TRUE)
   ) %>%
-  arrange(avg_quintile)  #rank health boards from most → least deprived
-
-
+  arrange(avg_quintile)  #rank health boards from most to least deprived
 #join deprivation ranking to prescribing data (2019 = pre-COVID, 2022 = post-COVID)
 final_lollipop_data <- combined %>% 
-  filter(winter_year %in% c("2019", "2022")) %>%      #keep only pre and post pandemic years
-  mutate(period = ifelse(winter_year == 2019, "pre", "post")) %>%  #label periods
-  left_join(hb_deprivation, by = "h_bname")            #add deprivation profile
-#calculate % change in prescribing per health board
-lollipop_plot <- final_lollipop_data %>% 
+  filter(winter_year %in% c("2019", "2022")) %>%
+  mutate(period = ifelse(winter_year == 2019, "pre", "post")) %>%
+  full_join(hb_deprivation, by = "h_bname")
+#calculate percentage change in prescribing per health board
+change_summary <- final_lollipop_data %>% 
   group_by(h_bname, period) %>% 
-  summarise(
-    avg_prescribe = mean(total_paid),     
-    avg_quintile = first(avg_quintile), 
-    .groups = "drop"
-  ) %>% 
+  summarise(avg_prescribe = mean(total_paid),     
+    avg_quintile = first(avg_quintile),
+    pct_deprived = first(pct_deprived),
+    total_pop = first(total_pop)) %>% 
   pivot_wider(
     names_from = period, 
-    values_from = avg_prescribe           #create 'pre' and 'post' columns
+    values_from = avg_prescribe
   ) %>%
   mutate(
-    pct_change = round(((post - pre) / pre) * 100, 2)  # Percentage change
+    pct_change = round(((post - pre) / pre) * 100, 1),
+    avg_quintile = round(avg_quintile, 2),
+    pct_deprived = round(pct_deprived, 1),
+    pre = round(pre, 0),
+    post = round(post, 0)
   ) %>%
-  arrange(avg_quintile) %>%               #rank health boards by deprivation
-  mutate(h_bname = factor(h_bname, levels = unique(h_bname)))  
-#lollipop Plot (with hover labels showing HB name + % change)
-pct_lollipop <- lollipop_plot %>% 
-  ggplot() +
-  geom_segment(
-    aes(
-      x = h_bname, xend = h_bname,
-      y = 0, yend = pct_change,
-      # Hover tooltip content for stems
-      text = paste0(
-        "Health Board: ", h_bname, "<br>",
-        "Change: ", pct_change, "%" )),
-    color = "skyblue" ) +
-  geom_point(
-    aes( x = h_bname, y = pct_change,
-      text = paste0(
-        "Health Board: ", h_bname, "<br>",
-        "Change: ", pct_change, "%")),
-    color = "blue", size = 3, alpha = 0.6)+
-  theme_light() +
-  coord_flip() +
-  theme_minimal()+
-  labs(
-    title = "Percentage Change in Antidepressant Prescribing per Health Board (Pre vs Post COVID-19)",
-    x = "Health Board (ranked from most deprived to least deprived)",
-    y = "Percentage Change (%)"
+  arrange(desc(pct_change))  #sort by percentage change (highest first)
+
+# Create formatted table
+prescribing_table <- change_summary %>%
+  select(h_bname, pre, post, pct_change, avg_quintile, pct_deprived) %>%
+  rename(
+    "Health Board" = h_bname,
+    "Pre-COVID (2019)" = pre,
+    "Post-COVID (2022)" = post,
+    "% Change" = pct_change,
+    "Avg SIMD Quintile" = avg_quintile,
+    "% in Deprived Areas (Q1-Q2)" = pct_deprived
   )
 
-# Convert to interactive plot with hover labels
-ggplotly(pct_lollipop, tooltip = "text")
+prescribing_table %>% 
+gt() %>% 
+tab_header(title=md("**Antidepressant Prescribing** Changes by Health Board **Before and After COVID-19** (2019-2022)"),subtitle=md("with *deprivation indicators*")) %>% 
+tab_spanner(label="average total prescriptions",columns = c('Pre-COVID (2019)','Post-COVID (2022)')) %>% 
+tab_spanner(label="Deprivation",columns = c('Avg SIMD Quintile','% in Deprived Areas (Q1-Q2)')) %>% 
+   tab_footnote(footnote = md("**Avg SIMD Quintle** 1 represents most deprived areas in scotland "))
 ```
-
-The lollipop data provides a summary of the impact of covid 19 .  overall each health board experienced and increase with deprevation not having as much of an impact as expects.However lankashire and glasgow has the bggest increase which could potential lbe linked to be more deprived or larger population.
-------------------------------------------------------------------------
 
 *Conclusion* *Limitations* *Next Steps*
