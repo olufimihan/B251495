@@ -1,6 +1,11 @@
 ---
-title: "Assessment"
-output: html_document
+title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation?" 
+output: 
+  html_document:
+    theme: darkly
+    code-fold: true 
+    code_folding: show
+    code_download: false
 date: "2025-10-31"
 ---
 
@@ -8,81 +13,90 @@ date: "2025-10-31"
 knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE)
 ```
 
-## R Markdown
+<u>**Introduction**</u>
+Depression is one of the most common mental health conditions worldwide. It can have significant consequences for individuals, communities, and wider society, including inmpacts on wellbeing and employment. One form of depression known to worsen during the winter months is Seasonal Affective Disorder (SAD) (springer/references).
 
-#### Has the COVID-19 pandemic influenced antidepressant prescribing patterns during the winteseason (September-October) across Scottish health boards?
+The Covid-19 pandemic created major distruptions to daily life, including prolonged periods spent indoors due to lockdowns. Reduced exposure to natural light is a known risk factor for SAD(NHS), and the combination of winter daylight shortages and enforced indoor isolation may have contributed to increased levels of depressive symptoms during the pandemic. These changes may be reflected in pattern of antidepressant prescribing, particularly during winter periods.
 
-## Winter season
+The aim of this study is to investigate wether the COVID-19 pandemic influenced antidepressant prescribing and whether there are inequalities or geographic differences associated with this trend.
 
-## scotishcensusgov
+<u>**Methods/DATA**</u>
+All data used in this study was obtained from publicly available NHS Scotland and Scottish Government sources.Antidepressant prescribing data were downloaded from the Data by Prescriber Location dataset, focusing specifically on winter periods (December to Februray) for the years 2019-2023, from the Public Health Scotland OpenData portal. Winter population estimates were taken from the National Records of Scotland census release.Socioeconomic information was sourced from the Scottish Index of Multiple Deprivation (SIMD 2020v2) datasets published by the Scottish Government. Spatial analysis was supported by incorporating NHS Scotland Health Board boundary shapefiles, which are publicly available through PHS and used to map regional variation in prescribing.
 
-#Join the data boards
+Antidepressant medications were identified using the BNF item code prefix “0403”, and all prescriptions with codes starting with “0403” were retained for analysis. These filtered data were then processed and summarised to generate visualisations of prescribing patterns.
 
-I loaded september to october data boards from 2017 - 2023 to represent the freshers season then I merged the health boards #I summarise total antidepressant prescriptions per Freshers year and plotted the graph to see the trend #Looked at pre coviid , during covid and after covid trend to see if there has been any impact or association
-
+:::{.callout-note}
+For the purpose of this study, the COVID-19 period is defined as March 2020 to June 2021, corresponding to the main period of national lockdowns. This places Winter 2019 as pre-COVID, Winter 2020/2021 as during COVID, and Winter 2022 as post-COVID.
+:::
+<u>**RESULTS**</u>
 ```{r message=FALSE, warning=FALSE}
+##Loading Necessary Packages
 library(tidyverse)
-library(here) # directory stucture
-library(gt) # tables
-library(janitor) # cleaning data
-library(ggplot2) # plotting graph
-library(sf) # to read in map data 
-library(readxl) # to read in map data
-library(plotly) # to make interactive
-library(viridis)
-library(sf)
+library(here) #<1> directory stucture
+library(gt) # <2>tables
+library(janitor) # <3>cleaning data
+library(ggplot2) # <4>plotting graph
+library(sf) # <5>to read in map data 
+library(readxl) #<6> to read in map data
+library(plotly) # <7>to make interactive
+library(viridis) # <8>colour palette for map
+library(ggiraph)
 
 ```
-
-loading a large amount of data in a shorter time period by downloading and using the mapdfr function (data from 2017-2023)
-
+1.'here' is a directory structure 2.'gt' is for making tables 3. 'janitor' is for cleaning data 4.'ggplo2' is for plotting graph 5. 'sf' is to read in map data 6. plotly is to make it interactive 7. 'virdis' is responsible for the colour pattern of the map 
 ```{r message=FALSE, warning=FALSE}
+# Loading multiple data files (18 CSVs) containing counts of medications dispensed in the community
 files <- list.files(here("data", "winter_data"), pattern = "csv")
-winter_data <- files %>% 
+winter_data <- files %>% # Read all downloaded winter prescribing files stored in the 'winter_data' folder
   map_dfr(~read_csv(here("data", "winter_data", .))) %>% 
-clean_names()
+clean_names()#combine into one dataframe and clean column names
 ```
-
-clean up data and filter for the sections you want
 
 ```{r message=FALSE, warning=FALSE}
 filtered_winter_data <- winter_data %>% 
-filter(str_starts(bnf_item_code,"0403")) %>%  #antidepressant code is 0403
-  mutate(year = as.numeric(substr(paid_date_month,1,4)), month = as.numeric(substr(paid_date_month,5,6))) %>% #separates the date into years and month so that i can group winter sections
+filter(str_starts(bnf_item_code,"0403")) %>%  #Filter for antidepressants only (BNF item code starts with "0403" 
+  mutate(year = as.numeric(substr(paid_date_month,1,4)), month = as.numeric(substr(paid_date_month,5,6))) %>% #Extract year and month from 'paid_date_month' for grouping into winter periods
   mutate(winter_year=case_when(month == 12 ~ year + 1, 
-month %in% c(1,2) ~ year) )#makes a new column to group the winter years 
-
+month %in% c(1,2) ~ year) )  #Create 'winter_year' column: December counts belong to the next year, Jan-Feb to current year
 filtered_winter_data <- filtered_winter_data %>% 
-  unite("healthboards",hbt2014,hbt,sep = "_")#so some of my data healthboard codes were under the name hbt_2014 AND another was hbt so i had to merge the column so all the healthboard columns fall under one
+  unite("healthboards",hbt2014,hbt,sep = "_") #Merge Health Board columns into a single column since they contain the same information
 filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthboards) 
     filtered_winter_data$healthboards <-
-      gsub("_","",filtered_winter_data$healthboards)#had to remove some NA characters and '_' characters
-
+      gsub("_","",filtered_winter_data$healthboards)#Remove any remaining 'NA' strings and underscores to standardize Health Board codes
 ```
-
 Graph 1
-
 ```{r message=FALSE, warning=FALSE}
+ #summarise total antidepressant prescriptions for each winter year
 winter_years_data <- filtered_winter_data %>% 
   group_by(winter_year) %>% 
   summarise(total_items=sum(number_of_paid_items,na.rm = TRUE))
-
-plot <- ggplot(winter_years_data,aes(x=winter_year,y=total_items)) +
+#plot line graph to visualise overall trend in total prescriptions across winter years
+plot <- suppressWarnings( ggplot(winter_years_data,aes(x=winter_year,y=total_items)) + #line connecting total prescriptions per year
   geom_line(linewidth=0.7,colour = "blue") +
-  geom_point(size=2)+
-  scale_x_continuous(breaks=2017:2023) +
-  labs(title="Antidepressant Prescriptions During Winter Season",x="Year",y="Total Antidepressant Prescriptions") +
-  theme_minimal()
+  geom_point(aes(text = paste0(
+      "<b>Winter Year:</b> ",winter_year, "<br>",
+      "<b>Total Items:</b> ",scales::comma(total_items)),
+size = 1))+ #points with interactive tooltip showing year and total
+  geom_vline(xintercept = 2020, 
+linetype = "solid", colour = "brown") + geom_vline(xintercept = 2022, 
+linetype = "solid", colour = "brown") + #reference lines to mark COVID-related winters
+  scale_x_continuous(breaks=2017:2023) + #ensures all years appear on x-axis
+  labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
+  theme_minimal() + 
+ theme(
+    panel.background = element_rect(fill = "lightblue"),   # plot area colour
+    plot.background = element_rect(fill = "white"), # whole plot colour
+    panel.grid.major = element_line(colour="white",linewidth=0.5), # grid line colour and width
+    panel.grid.minor = element_line(colour="white",linewidth=0.3) #gridline colour and width
+  ))
   
-ggplotly(plot)
-print(plot)
-
-#write a code talking about the zoomed in changes and reference why you dudnt go from 0
-
+ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
 ```
+*results*
+The line graph shows a consistent upward trend in antidepressant prescribing during the winter months across all years observed. Although a reference line marks the COVID-19 period (2020–2022), the overall trajectory does not display a sharp deviation from pre-pandemic patterns. The rate of increase appears slightly less steep during the COVID-19 years compared with earlier periods such as 2018–2019, suggesting that the pandemic may have had only a modest effect on winter prescribing behaviour. Nevertheless, the underlying upward trend persists throughout the entire time series. The y-axis does not begin at zero, allowing clearer visualisation of year-to-year differences.
 
 ```{r}
-#ROUGH
+#Prepare Population
 population <- readxl::read_excel(here("data","population.xlsx"), skip=10) %>% 
   clean_names() %>% 
   select(x2,all_people) %>% 
@@ -90,15 +104,8 @@ population <- readxl::read_excel(here("data","population.xlsx"), skip=10) %>%
   rename(h_bname = "x2",hb_population = "all_people") %>% 
 filter(!str_detect(hb_population,"Cells"))
 
-filtered2_winter_data <- filtered_winter_data %>% 
-  group_by(healthboards,bnf_item_code,winter_year,gp_practice) %>% 
-  summarise(total_paid = sum(paid_quantity, na.rm =TRUE))
-
-```
-retry reading in data 
-```{r}
 filtered3_winter_data <- filtered_winter_data %>% 
-  group_by(healthboards,winter_year,paid_date_month,gp_practice) %>% 
+  group_by(healthboards,winter_year,gp_practice) %>% 
   summarise(paid_quantity = sum(paid_quantity,na.rm=TRUE)) 
 
 SIMD <- readxl::read_excel(here("data","SIMD.xlsx")) %>% 
@@ -108,207 +115,153 @@ combined_pop_simd <- SIMD %>%
   full_join(filtered3_winter_data,join_by(h_bcode == healthboards)) %>% 
   left_join(population,join_by(h_bname == h_bname))
 ```
-retry making map
+
+try map 
 ```{r}
-combined_pop_simd2 <- combined_pop_simd %>% 
-  group_by(winter_year,h_bname,h_bcode) %>% 
-    summarise(quantity_per_head = sum(paid_quantity)/mean(hb_population)) %>% 
-    filter(!is.na(h_bname)) 
 
-### map 
-NHS_healthboards <- st_read(here( "data", "Week6_NHS_HealthBoards_2019.shp")) %>% 
-clean_names() %>% 
-  rename(h_bname = hb_name)
-
-# Join spatial data with falls_admissions_75_summary
-mapped_data <- combined_pop_simd2 %>%
-  full_join(NHS_healthboards,by="h_bname") %>% 
-  st_as_sf()
-#CLAUDE : 
-  library(ggiraph)
-plot_map <- mapped_data %>% 
-  ggplot() + 
-  geom_sf_interactive(  # Changed from geom_sf
-    aes(fill = quantity_per_head,
-        tooltip = paste0(h_bname, 
-                        "\nWinter Year: ", winter_year,
-                        "\nQuantity per Head: ", round(quantity_per_head, 2))),
-    colour = "white", 
-    size = 0.1
-  ) + 
-  scale_fill_distiller(palette = "Blues", direction = 1, 
-                       name = "Items per Head") +
-  labs(
-    title = "Antidepressant Prescriptions per Head",
-    subtitle = "By Health Board and Winter Year"
-  ) +
-  facet_wrap(~ winter_year) +
+#sum antidepressant prescriptions per health board and winter year (from 2019 onwards)
+hb_prescribing <- filtered_winter_data %>%
+  filter(winter_year >= 2019) %>%
+  group_by(healthboards, winter_year) %>%
+  summarise(total_paid = sum(paid_quantity, na.rm = TRUE), .groups="drop")
+#clean SIMD data (keep unique health board codes and names)
+simd_clean <- SIMD %>% select(h_bcode, h_bname) %>% distinct()
+#combine with prescribing data with SIMD and population data,calculate prescriptions per head
+combined <- hb_prescribing %>%
+  left_join(simd_clean, join_by(healthboards == h_bcode)) %>%
+  left_join(population, by = "h_bname") %>%
+  mutate(quantity_per_head = total_paid / hb_population) %>%
+  filter(!is.na(h_bname))
+#read and clean NHS health board shapefile
+NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp")) %>%
+  clean_names() %>% rename(h_bname = hb_name)
+#join spatial data with prescribing data, fill missing value with 0
+retry_mapped_data <- NHS_healthboards %>%
+  left_join(combined, by = "h_bname") %>%
+  st_as_sf() %>%
+  mutate(quantity_per_head = replace_na(quantity_per_head, 0))
+#plot interactive map of antidepressant prescriptions per head
+plot_map <- retry_mapped_data %>% 
+  ggplot() +
+  geom_sf_interactive(aes(fill = quantity_per_head,
+        tooltip = paste0(h_bname,
+                         "\nWinter Year: ", winter_year,
+                         "\nItems per Head: ", round(quantity_per_head,2))),
+    colour = "white",
+    size = 0.1) +
+  scale_fill_viridis_c(option = "mako", direction = -1, name = "Items per Head") + #blueish colour palette
+  labs(title="Antidepressant Prescriptions per Head",
+       subtitle="By Health Board and Winter Year") +
+  facet_wrap(~winter_year) + # separate maps per year
   theme_void() +
-  theme(
-    strip.text = element_text(size = 12, face = "bold"),
-    plot.title = element_text(face = "bold", size = 16),
-    plot.subtitle = element_text(size = 10)
-  )
-
-interactive_map <- girafe(ggobj = plot_map)  # Changed from ggplotly
-interactive_map
-
+  theme(strip.text = element_text(size=12, face="bold"),
+        plot.title = element_text(face="bold", size=16),
+        plot.subtitle = element_text(size=10))
+#convert to interactive map
+interactive_map <- girafe(ggobj = plot_map);interactive_map
 ```
+*results*
+Following from the overall increase in aantidepressant prescriptions shown in Figure 1, this map shows the geographic distribution of prescriotions and highlights both consistency and change. While the general north-south gradient in prescribing rates remained stable, the overall intensification post-2020 suggests a system wide response to increased levels depression.
+Interactive exploration of the map shows that health bards such as Lanarkshire and Glasgow experienced the largest increase in antidepressant prescriptions between the pre-COVID period(2019). The progression overall from 2020-2022 shows a clear deepinging of intesisty suggesting that regions with historically higher prescription rates saw even greater increases during and after the pandemic. This may reflect widening regional disparities.
+Overall, central Scotland, particularly the more densely populated urban belt, shows higher antidepressant prescriptions per head compared to the northern regions, suggesting that population density and urbanization may be associated with higher prescribing rates.
 
 retry making boxplot
 ```{r}
-files <- list.files(here("data", "winter_population"), pattern = "csv")
-winter_population <- files %>% 
-  map_dfr(~read_csv(here("data", "winter_population", .))) %>% 
-clean_names()
-
-summary_combined <- combined_pop_simd %>% 
-  group_by(simd2020v2_quintile,h_bname,gp_practice,winter_year) %>% 
-  summarise(avg_paid_over_winters = mean(sum(paid_quantity))) %>% 
-    filter(!is.na(simd2020v2_quintile))
-
-files <- list.files(here("data", "winter_population"), pattern = "csv")
-winter_population <- files %>% 
-  map_dfr(~read_csv(here("data", "winter_population", .))) %>% 
-clean_names()
-
-filtered_winter_population <- winter_population %>% 
-  select(date,practice_code,hb,all_ages) %>% 
-  mutate(year = as.numeric(substr(date,1,4))) %>% 
-  rename(healthboards = hb) %>% 
-rename(winter_year = year)
- filtered_winter_population$winter_year <- gsub("2020","2019",filtered_winter_population$winter_year) 
-  
-  filtered_winter_population$winter_year <- gsub("2023","2022",filtered_winter_population$winter_year) 
-
-  summary_winter_with_simd <- summary_combined %>% 
-  filter(winter_year %in% c("2019","2022")) %>% 
-  rename(practice_code = gp_practice) %>% 
-  rename(winter_year = winter_year)
-  
-  summary_winter_with_simd <- summary_winter_with_simd %>%
+#read and clean winter population data
+winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
+  map_dfr(read_csv) %>%
+  clean_names() %>%
+  select(date, practice_code, hb, all_ages) %>%
+  mutate(winter_year = as.numeric(substr(date, 1, 4)),
+    winter_year = case_when(
+      winter_year == 2020 ~ 2019,
+      winter_year == 2023 ~ 2022,
+      TRUE ~ winter_year ),
+    healthboards = hb) %>%
+  select(-hb)
+#summarise and filter combined population data for selected years
+summary_winter_with_simd <- combined_pop_simd %>%
+  filter(!is.na(simd2020v2_quintile), winter_year %in% c("2019","2022")) %>%
+  group_by(simd2020v2_quintile, h_bname, gp_practice, winter_year) %>%
+  summarise(avg_paid_over_winters = mean(paid_quantity), .groups = "drop") %>%
+  rename(practice_code = gp_practice) %>%
   mutate(winter_year = as.numeric(winter_year))
+# Join datasets
+joined_data <- summary_winter_with_simd %>%
+  full_join(winter_population, by = c("winter_year", "practice_code"))
+# Calculate prescriptions per 1000
+final_boxplot <- joined_data %>%
+  group_by(simd2020v2_quintile, h_bname, practice_code, winter_year) %>%
+  reframe(
+    avg_per_1000 = (avg_paid_over_winters / all_ages) * 1000,
+    year_label = factor(winter_year,
+                        levels = c(2019, 2022),
+                        labels = c("Pre-COVID (2019)", "Post-COVID (2022)"))
+  )
 
-filtered_winter_population <- filtered_winter_population %>%
-  mutate(winter_year = as.numeric(winter_year))
-
-joined_data <- summary_winter_with_simd %>% 
-  full_join(filtered_winter_population,join_by (winter_year == winter_year, practice_code == practice_code))
-
-final_boxplot <- joined_data %>% 
-  group_by(simd2020v2_quintile,h_bname,practice_code,winter_year) %>% 
-  reframe(avg_per_1000=(avg_paid_over_winters/all_ages)*1000,
-            year_label=factor(winter_year,
-                           level = c(2019,2022),
-                           labels = c("Pre-COVID (2019)","Post-COVID (2022)")))
-
-#chat 
-hb_points <-final_boxplot %>% 
-  group_by(simd2020v2_quintile,h_bname) %>%   summarise(hb_avg = mean(avg_per_1000, na.rm = TRUE))
-
-#chat 
-
-final_boxplot <- final_boxplot %>% 
-  mutate(simd2020v2_quintile = factor(simd2020v2_quintile))
-hb_points <- hb_points %>% 
-  mutate(simd2020v2_quintile = factor(simd2020v2_quintile))
-
-
+#create boxplot of average prescriptions per 1000 by SIMD quintile, faceted by pre/post COVID
 box2 <- final_boxplot %>%
-  ggplot(aes(x = factor(simd2020v2_quintile), y = avg_per_1000, 
-             fill = factor(simd2020v2_quintile))) +
-  
-  geom_boxplot(outlier.shape = NA) +   # hide boxplot outliers
-  geom_point(data = hb_points,
-             aes(x = factor(simd2020v2_quintile), y = hb_avg,
-                 text = paste0("Health Board: ", h_bname, "<br>",
-                               "SIMD: ", simd2020v2_quintile, "<br>",
-                               "Avg per 1000: ", round(hb_avg, 1))),
-             color = "red",
-             size = 2,
-             alpha = 0.7,
-             position = position_jitter(width = 0.2)) +
-  
+  ggplot(aes(x = simd2020v2_quintile, y = avg_per_1000, fill = factor(simd2020v2_quintile))) +
+  geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha = 0.6) +
   scale_y_continuous(labels = scales::label_comma()) +
-  coord_cartesian(ylim = c(5000, 20000000)) +
-  
+  coord_cartesian(ylim = c(0, 70000))  + #scaled y axis graph to be able to visualise better
   theme_minimal() +
   theme(legend.position = "none") +
-  facet_wrap(~winter_year) +
-  labs(title = "Average Winter Antidepressant Prescriptions Per Practice by SIMD Quintile",
-       x = "SIMD Quintile (1 = Most Deprived)",
-       y = "Avg prescriptions per 1000")
-
-# Interactive plot
-ggplotly(box2, tooltip = "text")
-
-
-
-#just boxplot
-
-box2 <- final_boxplot %>% 
-  ggplot(aes(x=simd2020v2_quintile,y=avg_per_1000, fill= factor(simd2020v2_quintile)))+
-geom_boxplot() + geom_point(data = hb_points,
-           aes(x = factor(simd2020v2_quintile),
-               y = hb_avg),
-           color = "red",
-           size = 2,
-           alpha = 0.7,
-           position = position_jitter(width = 0.2)) +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6)+
-  scale_y_continuous(labels = scales::label_comma()) +
-  coord_cartesian(ylim = c(5000,20000000))+
-  geom_jitter_interactive(color = "lightblue",size=0.4,alpha=0.9)+
-  theme_minimal()+
-  theme(legend.position = "none")+
-  facet_wrap(~winter_year) + 
-  labs(title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
+  facet_wrap(~year_label) +
+  labs(
+    title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
     x = "SIMD Quintile (1 = Most Deprived)",
-    y = "Avg prescriptions per 1000")
+    y = "Avg prescriptions per 1000"
+  )
 
 ggplotly(box2)
 ```
-retry lollipop
+*results*
+Contrary to expectations, the boxplot shows no strong socioeconomic gradient in antidepressant prescribing rates across SIMD quintiles. Although interactive inspection reveals slight differences in median values, the overall pattern remains relatively flat. Median prescribing rates roughly doubled across all SIMD groups between 2019 and 2022 (rising to around 28,000 per 1,000), but this shift appears uniform, suggesting a system-wide response to the pandemic’s mental-health impact rather than a disproportionate effect on specific socioeconomic groups. This contrasts with the clearer geographical differences observed in Figure 2.
+A flat pattern across deprivation levels could indicate equitable access to mental-health treatment. Alternatively, it may reflect potential under-prescribing in the most deprived areas (SIMD Quintile 1), where need would typically be expected to be higher.
+Both time periods show substantial upper-range outliers (50,000–70,000+ per 1,000), meaning some health boards or GP practices prescribe at rates two to three times above the median regardless of deprivation level or year. These persistent outliers likely point to local prescribing cultures, service availability, or population health differences, and warrant further investigation.
+While COVID-19 did not widen median socioeconomic inequalities in prescribing, it did increase variability within each SIMD group. The wider interquartile ranges and more extreme outliers in 2022 suggest growing disparities in how individual health boards or practices responded to mental-health demand during and after the pandemic, even when deprivation levels were similar.
+
+ONE I AM USING
+
 ```{r}
-lollipop_data <- combined_pop_simd %>% 
-  filter(winter_year %in% c("2019","2022")) %>% 
-  group_by(simd2020v2_quintile,h_bname,winter_year) %>% 
-    summarise(total_paid = sum(paid_quantity,na.rm=TRUE),avg_SIMD = mean(simd2020v2_quintile, na.rm=TRUE)) %>% 
-mutate(period=ifelse(winter_year==2019, "pre", "post")) 
-
-#cht
-
-lollipop1_summary <- lollipop_data %>%
-  
-  # Step 1: Aggregate prescribing for each HB × period
-  group_by(h_bname, period) %>%
+# Create health board deprivation profile
+hb_deprivation <- SIMD %>%
+  group_by(h_bname) %>%
   summarise(
-    total_prescribing = sum(total_paid, na.rm = TRUE),
-    avg_simd = mean(simd2020v2_quintile, na.rm = TRUE),
+    # Population-weighted average quintile
+    avg_quintile = weighted.mean(simd2020v2_quintile, w = population, na.rm = TRUE),
+    
+    # Percentage in most deprived quintiles (Q1 & Q2)
+    pct_deprived = sum(population[simd2020v2_quintile <= 2], na.rm = TRUE) / 
+                   sum(population, na.rm = TRUE) * 100,
+    
+    # Total population for reference
+    total_pop = sum(population, na.rm = TRUE)
+  ) %>%
+  arrange(avg_quintile)  # Lower = more deprived
+
+# Then join this to your prescribing data
+final_lollipop_data <- combined %>% 
+  filter(winter_year %in% c("2019","2022")) %>% 
+  mutate(period = ifelse(winter_year == 2019, "pre", "post")) %>%
+  left_join(hb_deprivation, by = "h_bname")
+
+# Now create your lollipop plot ordered by deprivation
+lollipop_plot <- final_lollipop_data %>% 
+  group_by(h_bname, period) %>% 
+  summarise(
+    avg_prescribe = mean(total_paid),
+    avg_quintile = first(avg_quintile),  # Take the pre-calculated value
     .groups = "drop"
-  ) %>%
-  
-  # Step 2: Remove HBs with missing names
-  filter(!is.na(h_bname)) %>%
-  
-  # Step 3: Pivot pre/post
-  tidyr::pivot_wider(
-    names_from = period,
-    values_from = total_prescribing
-  ) %>%
-  
-  # Step 4: Calculate percentage change
-  mutate(
-    pct_change = ((post - pre) / pre) * 100
-  ) %>%
-  
-  # Step 5: Rank health boards by average SIMD
-  arrange(avg_simd) %>%
+  ) %>% 
+  pivot_wider(names_from = period, values_from = avg_prescribe) %>%
+  mutate(pct_change = ((post - pre) / pre) * 100) %>%
+  arrange(avg_quintile) %>%  # Order by deprivation
   mutate(h_bname = factor(h_bname, levels = unique(h_bname)))
 
-
-pct_lollipop <-lollipop1_summary %>% 
+pct_lollipop <-lollipop_plot%>% 
   ggplot () +
   geom_segment(aes(x=h_bname, xend=h_bname, y=0, yend = pct_change), color = "skyblue")+
   geom_point(aes(x = h_bname, y = pct_change),color = "blue", size=3, alpha = 0.6) +
@@ -325,11 +278,6 @@ pct_lollipop <-lollipop1_summary %>%
    
 ```
 
-questions : not sure the best way to displa my original data ? github - how to get rid of the signs 1- overall national trend (use original graph) 2- i want to show the variation between different regions using healthboards 3- link it to deprevation and look at prescriptions per person 4- can i do a map that shows pre covid and post covid side by side would that count as one 5- voilin plot across differet SIMDs to compare smaller unit of data - gp practice (postcode that links to SIMD) PATCHWORK - MAPS TOGETHETE reference line to show the split between precovid, covid and postcovid
-
-every dot is a gp practice - gp practice - dataset - adressess (assessment prep) voilin plot if messy add transperency open data use quintiles for voilin plot do a code that says if not installed install and load packages
-
-percentage increase
 
 
 overall trend
@@ -337,4 +285,12 @@ map antidepressant prescribing per head by healthboard facet by winter year?
 boxplot by SIMD 
 dumbell plot / lollipop graph - percentage change 
 write where the links are from
-
+covid line
+map - freescale or change the gradient colours
+round numbers
+avg = median and range - use statistic 
+box plot before map
+literature - rich people take depressant (in introduction) - deprssion affects 
+lolipop - quintiles instad decile ?- how to rank to depreva
+changw colour map
+limitation
