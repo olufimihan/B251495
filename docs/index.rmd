@@ -6,6 +6,7 @@ output:
     code-fold: true 
     code_folding: hide
     code_download: false
+    css: visual
 date: "2025-10-31"
 ---
 
@@ -15,9 +16,9 @@ knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE,error = FALSE, fig
 
 <u>**Introduction**</u>
 
-Depression is one of the most common mental health conditions worldwide. It can have significant consequences for individuals, communities, and wider society, including inmpacts on wellbeing and employment. One form of depression known to worsen during the winter months is Seasonal Affective Disorder (SAD) (springer/references).
+Depression is one of the most common mental health conditions worldwide. It can have significant consequences for individuals, communities, and wider society, including inmpacts on wellbeing and employment. One form of depression known to worsen during the winter months is Seasonal Affective Disorder (Rosenthal,M.B(2004)).
 
-The Covid-19 pandemic created major distruptions to daily life, including prolonged periods spent indoors due to lockdowns. Reduced exposure to natural light is a known risk factor for SAD(NHS), and the combination of winter daylight shortages and enforced indoor isolation may have contributed to increased levels of depressive symptoms during the pandemic. These changes may be reflected in pattern of antidepressant prescribing, particularly during winter periods.
+The Covid-19 pandemic created major distruptions to daily life, including prolonged periods spent indoors due to lockdowns. Reduced exposure to natural light is a known risk factor for SAD(Rosenthal,M.B(2004)), and the combination of winter daylight shortages and enforced indoor isolation may have contributed to increased levels of depressive symptoms during the pandemic. These changes may be reflected in pattern of antidepressant prescribing, particularly during winter periods.
 
 The aim of this study is to investigate wether the COVID-19 pandemic influenced antidepressant prescribing and whether there are inequalities or geographic differences associated with this trend.
 
@@ -29,6 +30,11 @@ Antidepressant medications were identified using the BNF item code prefix “040
 
 For the purpose of this study, the COVID-19 period is defined as March 2020 to June 2021, corresponding to the main period of national lockdowns. This places Winter 2019 as pre-COVID, Winter 2020/2021 as during COVID, and Winter 2022 as post-COVID.
 
+:::{.callout-gradient}
+:::{.callout-note}
+ [Figure 1](#Figure 1), [Figure 2](#Figure 2),[Figure 3](#Figure 3) are interactive - hover over the elements to see additional details.
+:::
+:::
 ------------------------------------------------------------------------
 
 ```{r message=FALSE, warning=FALSE}
@@ -70,7 +76,7 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 ------------------------------------------------------------------------
 
-**Figure 1**
+#Data wrangling{#**Figure 1**}
 
 ```{r warning=FALSE}
 #| fig-align: center
@@ -97,7 +103,7 @@ linetype = "solid", colour = "brown") + #reference lines to mark COVID-related w
   labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
   theme_minimal() )#thiscode suppresses warnings
   
-ploty_plot <- ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
+ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
 ```
 
 ------------------------------------------------------------------------
@@ -125,7 +131,7 @@ combined_pop_simd <- SIMD %>%
 
 ------------------------------------------------------------------------
 
-**Figure 2**
+# Data wrangling {#**Figure 2**}
 
 ```{r warning=FALSE}
 #| fig-align: center
@@ -178,7 +184,7 @@ interactive_map <- girafe(ggobj = plot_map);interactive_map
 
 ------------------------------------------------------------------------
 
-**Figure 3**
+#Data Wrangling{#**Figure 3**}
 
 ```{r message=FALSE, warning=FALSE}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
@@ -235,7 +241,7 @@ The boxplot shows no strong socioeconomic gradient in antidepressant prescribing
 </div>
 ------------------------------------------------------------------------
 
-**Figure 4**
+# Data wrangling {#**Figure 4**}
 
 ```{r message=FALSE, warning=FALSE}
 #create population-weighted deprivation profile per health board
@@ -297,4 +303,31 @@ tab_spanner(label="Deprivation",columns = c('Avg SIMD Quintile','% in Deprived A
 tab_caption(md("The table shows that Glasgow and Lanarkshire had the largest increases in antidepressant prescribing after COVID-19. This cannot be explained by average deprivation alone, but becomes clearer when considering that both regions have the highest concentrations of people living in the most deprived areas. Rural and island boards showed far smaller increases, suggesting that urbanisation and population density played a bigger role than deprivation in driving prescribing changes during COVID."))
 ```
 
-*Conclusion* *Limitations* *Next Steps*
+*** 
+**Conclusion**
+This analysis shows that antidepressant prescribing increased across almost all Scottish health boards after COVID-19, with the largest rises seen in Glasgow and Lanarkshire. However, average SIMD quintile did not explain these differences, as no clear deprivation gradient appeared before or after the pandemic [Figure 3](#Figure 3).
+
+When population-weighted deprivation was included, a clearer pattern emerged: health boards with the highest proportions of residents in the most deprived areas (Q1–Q2) experienced the greatest increases [Figure 4](#Figure 4). This suggests that COVID-19 may have intensified pre-existing mental health inequalities in large, urban, socioeconomically deprived regions.
+
+This aligns with [Figure 2](#Figure 2), which shows higher prescribing per head in central Scotland’s densely populated urban belt compared with more rural northern areas, highlighting the influence of population density and urbanisation.
+
+Overall, although prescribing did rise during COVID-19, the trend shown in [Figure 1](#Figure 1) indicates that this increase was part of a longer-term upward trajectory rather than a sharp pandemic-specific surge.
+
+*Limitations*
+Several limitations reduce the strength of these findings. Firstly, the data reflects prescribing volume, not whether the antidepressants were newly started or continued, so it may not directly truly represent true changes in mental health across deprivation levels.In addition, important confounding variables such as changes in healthcare access,remote consultations, and shifting service pressures durung COVID-19 potentially affecting the accuracy of the results.Finally, the analysis was only done at health board level, so findings cannot be generalised to individual gp practice levels so GP practices, and no conclusions can be made about patient-level experiences or need. 
+
+*Next Steps*
+Future work could be done to link prescribing levels to practice level SIMD and demographic characteristics to better understand drivers of change. Work should be done analysing antidepressant prescriptions all year round and compare it with the winter-only dataset used here, to determine whether truly seasonal peaks exist and whether winter peaks changed post-COVID. Additionally, applying time-series modelling would confirm whether the post COVID rise represents a temporary shock or a long term behavioural shift in prescribing patterns.
+
+**Referennces**
+Prescriptions in the Community: [here] (https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community)
+
+Scottish Census: [here] (https://www.scotlandscensus.gov.uk/webapi/jsf/tableView/tableView.xhtml)
+
+Scottish Index of Multiple Deprivation 2020v2 data zone lookup file https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments
+
+NHS shapeboard graph
+https://www.data.gov.uk/dataset/27d0fe5f-79bb-4116-aec9-a8e565ff756a/nhs-health-boards-scotland
+
+Seasonal Affective disorder
+https://link.springer.com/rwe/10.1007/978-0-306-48113-0_391
