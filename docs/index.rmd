@@ -71,6 +71,7 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 ------------------------------------------------------------------------
 
 *Figure 1*
+
 ```{r warning=FALSE,message=FALSE,fig.width=4,fig.height=3}
 #| fig-align: center
 #| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
@@ -118,55 +119,67 @@ combined_pop_simd <- SIMD %>%
   left_join(population,join_by(h_bname == h_bname))
 ```
 
-------------------------------------------------------------------------
 *Figure 2*
-```{r warning=FALSE,message=FALSE}
-#sum antidepressant prescriptions per health board and winter year (from 2019 onwards)
+```{r figure2, message=FALSE, warning=FALSE,eval=TRUE}
+library(ggiraph)
+library(viridis)
+library(sf)
+library(ggplot2)
+
+# Make sure 'combined' exists as in previous chunks
+
 hb_prescribing <- filtered_winter_data %>%
-  filter(winter_year >= 2019) %>%
-  group_by(healthboards, winter_year) %>%
-  summarise(total_paid = sum(paid_quantity, na.rm = TRUE))
-#clean SIMD data (keep unique health board codes and names)
+filter(winter_year >= 2019) %>%
+group_by(healthboards, winter_year) %>%
+summarise(total_paid = sum(paid_quantity, na.rm = TRUE))
+
 simd_clean <- SIMD %>% select(h_bcode, h_bname) %>% distinct()
-#combine with prescribing data with SIMD and population data,calculate prescriptions per head
+
 combined <- hb_prescribing %>%
-  left_join(simd_clean, join_by(healthboards == h_bcode)) %>%
-  left_join(population, by = "h_bname") %>%
-  mutate(quantity_per_head = total_paid / hb_population) %>%
-  filter(!is.na(h_bname))
-#read and clean NHS health board shapefile
-NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp"),quiet = TRUE) %>%
-  clean_names() %>% rename(h_bname = hb_name)
-#join spatial data with prescribing data, fill missing value with 0
+left_join(simd_clean, join_by(healthboards == h_bcode)) %>%
+left_join(population, by = "h_bname") %>%
+mutate(quantity_per_head = total_paid / hb_population) %>%
+filter(!is.na(h_bname))
+
+# Load shapefile for NHS Health Boards
+
+NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp"), quiet = TRUE) %>%
+clean_names() %>% rename(h_bname = hb_name)
+
 retry_mapped_data <- NHS_healthboards %>%
-  left_join(combined, by = "h_bname") %>%
-  st_as_sf() %>%
-  mutate(quantity_per_head = replace_na(quantity_per_head, 0))
-#plot interactive map of antidepressant prescriptions per head
-plot_map <- retry_mapped_data %>% 
-  ggplot() +
-  geom_sf_interactive(aes(fill = quantity_per_head,
-        tooltip = paste0(h_bname,
-                         "\nWinter Year: ", winter_year,
-                         "\nItems per Head: ", round(quantity_per_head,2))),
-    colour = "white",
-    size = 0.1) +
-  scale_fill_viridis_c(option = "mako", direction = -1, name = "Items per Head") + #blueish colour palette
-  labs(title="Antidepressant Prescriptions per Head",
-       subtitle="By Health Board and Winter Year") +
-  facet_wrap(~winter_year) + # separate maps per year
-  theme_void(base_size = 8) +
-  theme(strip.text = element_text(size=10, face="bold"),
-        plot.title = element_text(face="bold", size=12),
-        plot.subtitle = element_text(size=8))
-#convert to interactive map
-interactive_map <- girafe(ggobj = plot_map)
+left_join(combined, by = "h_bname") %>%
+st_as_sf() %>%
+mutate(quantity_per_head = replace_na(quantity_per_head, 0))
+
+# Plot interactive map
+
+plot_map <- retry_mapped_data %>%
+ggplot() +
+geom_sf_interactive(
+aes(fill = quantity_per_head,
+tooltip = paste0(h_bname,
+"\nWinter Year: ", winter_year,
+"\nItems per Head: ", round(quantity_per_head,2))),
+colour = "white",
+size = 0.1) +
+scale_fill_viridis_c(option = "mako", direction = -1, name = "Items per Head") +
+labs(title="Antidepressant Prescriptions per Head",
+subtitle="By Health Board and Winter Year") +
+facet_wrap(~winter_year) +
+theme_void(base_size = 8) +
+theme(strip.text = element_text(size=10, face="bold"),
+plot.title = element_text(face="bold", size=12),
+plot.subtitle = element_text(size=8))
+
+# Convert to interactive map
+
+interactive_map <- girafe(ggobj = plot_map, width_svg = 6, height_svg = 6)
 interactive_map
+
 ```
 
-------------------------------------------------------------------------
-
 *Figure 3*
+
 ```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
@@ -215,12 +228,16 @@ box2 <- final_boxplot %>%
 
 ggplotly(box2, height=250)
 ```
-<div style="text-align:center; font-size:0.9em; color:#555;">
+
+::: {style="text-align:center; font-size:0.9em; color:#555;"}
 The boxplot shows no strong socioeconomic gradient in antidepressant prescribing across SIMD quintiles, with median rates remaining relatively flat in both 2019 and 2022. Although overall prescribing increased uniformly after COVID-19, greater variability and more extreme outliers in 2022 suggest widening differences between individual health boards or practices, rather than between deprivation groups.
-</div>
+:::
+
 ------------------------------------------------------------------------
+
 *Figure 4*
-```{r message=FALSE, warning=FALSE, fig.width=4,fig.height=10} 
+
+```{r message=FALSE, warning=FALSE, fig.width=4,fig.height=10}
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
@@ -284,9 +301,9 @@ tab_spanner(label="Deprivation",columns = c('Avg SIMD Quintile','% in Deprived A
 tab_caption(md("The table shows that Glasgow and Lanarkshire had the largest increases in antidepressant prescribing after COVID-19. This cannot be explained by average deprivation alone, but becomes clearer when considering that both regions have the highest concentrations of people living in the most deprived areas. Rural and island boards showed far smaller increases, suggesting that urbanisation and population density played a bigger role than deprivation in driving prescribing changes during COVID.")) 
 ```
 
-*** 
-**Conclusion**
-This analysis shows that antidepressant prescribing increased across almost all Scottish health boards after COVID-19, with the largest rises seen in Glasgow and Lanarkshire. However, average SIMD quintile did not explain these differences, as no clear deprivation gradient appeared before or after the pandemic Figure 3.
+------------------------------------------------------------------------
+
+**Conclusion** This analysis shows that antidepressant prescribing increased across almost all Scottish health boards after COVID-19, with the largest rises seen in Glasgow and Lanarkshire. However, average SIMD quintile did not explain these differences, as no clear deprivation gradient appeared before or after the pandemic Figure 3.
 
 When population-weighted deprivation was included, a clearer pattern emerged: health boards with the highest proportions of residents in the most deprived areas (Q1–Q2) experienced the greatest increases Figure 4. This suggests that COVID-19 may have intensified pre-existing mental health inequalities in large, urban, socioeconomically deprived regions.
 
@@ -294,20 +311,8 @@ This aligns with Figure 2, which shows higher prescribing per head in central Sc
 
 Overall, although prescribing did rise during COVID-19, the trend shown in Figure 1 indicates that this increase was part of a longer-term upward trajectory rather than a sharp pandemic-specific surge.
 
-*Limitations*
-Several limitations reduce the strength of these findings. Firstly, the data reflects prescribing volume, not whether the antidepressants were newly started or continued, so it may not directly truly represent true changes in mental health across deprivation levels.In addition, important confounding variables such as changes in healthcare access,remote consultations, and shifting service pressures durung COVID-19 potentially affecting the accuracy of the results.Finally, the analysis was only done at health board level, so findings cannot be generalised to individual gp practice levels so GP practices, and no conclusions can be made about patient-level experiences or need. 
+*Limitations* Several limitations reduce the strength of these findings. Firstly, the data reflects prescribing volume, not whether the antidepressants were newly started or continued, so it may not directly truly represent true changes in mental health across deprivation levels.In addition, important confounding variables such as changes in healthcare access,remote consultations, and shifting service pressures durung COVID-19 potentially affecting the accuracy of the results.Finally, the analysis was only done at health board level, so findings cannot be generalised to individual gp practice levels so GP practices, and no conclusions can be made about patient-level experiences or need.
 
-*Next Steps*
-Future work could be done to link prescribing levels to practice level SIMD and demographic characteristics to better understand drivers of change. Work should be done analysing antidepressant prescriptions all year round and compare it with the winter-only dataset used here, to determine whether truly seasonal peaks exist and whether winter peaks changed post-COVID. Additionally, applying time-series modelling would confirm whether the post COVID rise represents a temporary shock or a long term behavioural shift in prescribing patterns.
+*Next Steps* Future work could be done to link prescribing levels to practice level SIMD and demographic characteristics to better understand drivers of change. Work should be done analysing antidepressant prescriptions all year round and compare it with the winter-only dataset used here, to determine whether truly seasonal peaks exist and whether winter peaks changed post-COVID. Additionally, applying time-series modelling would confirm whether the post COVID rise represents a temporary shock or a long term behavioural shift in prescribing patterns.
 
-**References**
-National Records of Scotland (2022). Scottish Census.
-Scottish Census Web Portal.
-(https://www.scotlandscensus.gov.uk/webapi/jsf/tableView/tableView.xhtml)(Accessessed: 26 November 2023)
-Public Health Scotland (2025). Prescriptions in the Community. NHS Scotland Open
-(https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community)(Accessessed: 26 November 2023)
-Scottish Government (2020). Scottish Index of Multiple Deprivation 2020v2 data zone lookup file. Scottish Government Supporting Documents.
-https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed: 26 November 2023)
-UK Government (2025). NHS Health Boards Scotland.
-Data.gov.uk.https://www.data.gov.uk/dataset/27d0fe5f-79bb-4116-aec9-a8e565ff756a/nhs-health-boards-scotland(Accessessed: 26 November 2023)
-Rosenthal, M.B. (2004). Seasonal Affective Disorder. In: Encyclopedia of Women’s Health. Springer, Boston, MA. https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed: 26 November 2023)
+**References** National Records of Scotland (2022). Scottish Census. Scottish Census Web Portal. (<https://www.scotlandscensus.gov.uk/webapi/jsf/tableView/tableView.xhtml>)(Accessessed: 26 November 2023) Public Health Scotland (2025). Prescriptions in the Community. NHS Scotland Open (<https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community>)(Accessessed: 26 November 2023) Scottish Government (2020). Scottish Index of Multiple Deprivation 2020v2 data zone lookup file. Scottish Government Supporting Documents. [https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed](https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/#supportingdocuments(Accessessed){.uri}: 26 November 2023) UK Government (2025). NHS Health Boards Scotland. Data.gov.uk.https://www.data.gov.uk/dataset/27d0fe5f-79bb-4116-aec9-a8e565ff756a/nhs-health-boards-scotland(Accessessed: 26 November 2023) Rosenthal, M.B. (2004). Seasonal Affective Disorder. In: Encyclopedia of Women’s Health. Springer, Boston, MA. [https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed](https://doi.org/10.1007/978-0-306-48113-0_391(Accessessed){.uri}: 26 November 2023)
