@@ -10,7 +10,7 @@ date: "2025-10-31"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE)
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE,error = FALSE, fig.align = 'center')
 ```
 
 <u>**Introduction**</u>
@@ -100,6 +100,15 @@ linetype = "solid", colour = "brown") + #reference lines to mark COVID-related w
 ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
 ```
 
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">See in Full Screen</button>
+
+<div class="modal fade" id="exampleModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered p-8" style="max-width: 90%"><div class="modal-content">
+
+```{r, echo=FALSE, warning=FALSE, out.width="100%"}
+plot
+```
+
+</div></div></div>
 ------------------------------------------------------------------------
 
 ```{r message=FALSE, warning=FALSE}
@@ -148,7 +157,7 @@ combined <- hb_prescribing %>%
   mutate(quantity_per_head = total_paid / hb_population) %>%
   filter(!is.na(h_bname))
 #read and clean NHS health board shapefile
-NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp")) %>%
+NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp"),quiet = TRUE) %>%
   clean_names() %>% rename(h_bname = hb_name)
 #join spatial data with prescribing data, fill missing value with 0
 retry_mapped_data <- NHS_healthboards %>%
