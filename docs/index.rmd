@@ -1,5 +1,5 @@
 ---
-title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation? 3" 
+title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation? " 
 output: 
   html_document:
     theme: lumen
@@ -74,7 +74,7 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 ```{r warning=FALSE,message=FALSE,fig.width=4,fig.height=3}
 #| fig-align: center
-#| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
+#| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis does not start at 0 to improve visibility of year-to-year changes."
 #| out-width: '100%'
 
 #summarise total antidepressant prescriptions for each winter year
@@ -121,12 +121,9 @@ combined_pop_simd <- SIMD %>%
 ```
 
 *Figure 2*
-```{r warning=FALSE,message=FALSE,fig.width=4,fig.height=3}
+```{r warning=FALSE,message=FALSE,fig.width=10,fig.height=4,out.width='100%'}
 #| fig-align: center
-#| fig-width: 3
-#| fig_height: 3
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
-#| out-width: '100%'
 
 # Make sure 'combined' exists as in previous chunks
 
@@ -165,13 +162,13 @@ size = 0.1) +
 scale_fill_viridis_c(option = "mako", direction = -1, name = "Items per Head") +
 labs(title="Antidepressant Prescriptions per Head",
 subtitle="By Health Board and Winter Year") +
-facet_wrap(~winter_year) +
+facet_wrap(~winter_year,nrow = 2) +
 theme_void(base_size = 8) +
 theme(strip.text = element_text(size=10, face="bold"),
 plot.title = element_text(face="bold", size=12),
 plot.subtitle = element_text(size=8))
 # Convert to interactive map
-interactive_map <- girafe(ggobj = plot_map, width_svg = 3, height_svg = 3)
+interactive_map <- girafe(ggobj = plot_map, width_svg = 10, height_svg = 3)
 interactive_map
 ```
 
