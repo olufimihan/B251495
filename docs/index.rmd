@@ -76,12 +76,11 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 # Figure 1: Data wrangling {#Figure1}
 
-```{r warning=FALSE, fig.width=5, fig.height=4}
+```{r warning=FALSE,message=FALSE,fig.width=4,fig.height=3}
 #| fig-align: center
 #| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
-#| message: false
 
- #summarise total antidepressant prescriptions for each winter year
+#summarise total antidepressant prescriptions for each winter year
 winter_years_data <- filtered_winter_data %>% 
   group_by(winter_year) %>% 
   summarise(total_items=sum(number_of_paid_items,na.rm = TRUE))
@@ -98,8 +97,7 @@ linetype = "solid", colour = "brown") + #reference lines to mark COVID-related w
   scale_x_continuous(breaks=2017:2023) + #ensures all years appear on x-axis
   labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
   theme_minimal(base_size = 10))#thiscode suppresses warnings
-  
-ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
+ggplotly(plot,tooltip="text",height=250) #convert ggplot to interactive plotly object with tooltips
 ```
 
 ------------------------------------------------------------------------
@@ -129,10 +127,9 @@ combined_pop_simd <- SIMD %>%
 
 # Figure 2: Data wrangling {#Figure2}
 
-```{r warning=FALSE, fig.width=5, fig.height=6}
+```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3}
 #| fig-align: center
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
-#| message: false
 
 #sum antidepressant prescriptions per health board and winter year (from 2019 onwards)
 hb_prescribing <- filtered_winter_data %>%
@@ -168,19 +165,18 @@ plot_map <- retry_mapped_data %>%
   labs(title="Antidepressant Prescriptions per Head",
        subtitle="By Health Board and Winter Year") +
   facet_wrap(~winter_year) + # separate maps per year
-  theme_void(base_size = 10) +
+  theme_void(base_size = 8) +
   theme(strip.text = element_text(size=10, face="bold"),
-        plot.title = element_text(face="bold", size=16),
-        plot.subtitle = element_text(size=10))
+        plot.title = element_text(face="bold", size=12),
+        plot.subtitle = element_text(size=8))
 #convert to interactive map
-interactive_map <- girafe(ggobj = plot_map);interactive_map
+interactive_map<-girafe(ggobj = plot_map,width_svg=5,height_svg=4)
 ```
 
 ------------------------------------------------------------------------
 
 # Figure 3: Data Wrangling {# Figure3}
-
-```{r message=FALSE, warning=FALSE, fig.width=8, fig.height=4}
+```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
   clean_names() %>%
@@ -219,16 +215,14 @@ box2 <- final_boxplot %>%
   scale_fill_viridis(discrete = TRUE, alpha = 0.6) +
   scale_y_continuous(labels = scales::label_comma()) +
   coord_cartesian(ylim = c(0, 70000))  + #scaled y axis graph to be able to visualise better
-  theme_minimal(base_size=9) +
+  theme_minimal(base_size=7) +
   theme(legend.position = "none") +
   facet_wrap(~year_label) +
-  labs(
-    title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
+  labs(title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
     x = "SIMD Quintile (1 = Most Deprived)",
-    y = "Avg prescriptions per 1000"
-  )
+    y = "Avg prescriptions per 1000")
 
-ggplotly(box2, height=350)
+ggplotly(box2, height=250)
 ```
 <div style="text-align:center; font-size:0.9em; color:#555;">
 The boxplot shows no strong socioeconomic gradient in antidepressant prescribing across SIMD quintiles, with median rates remaining relatively flat in both 2019 and 2022. Although overall prescribing increased uniformly after COVID-19, greater variability and more extreme outliers in 2022 suggest widening differences between individual health boards or practices, rather than between deprivation groups.
@@ -237,7 +231,7 @@ The boxplot shows no strong socioeconomic gradient in antidepressant prescribing
 
 # Figure 4: Data wrangling {#Figure4}
 
-```{r message=FALSE, warning=FALSE, fig.width=8, fig.height=10}
+```{r message=FALSE, warning=FALSE, fig.width=4,fig.height=10} 
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
