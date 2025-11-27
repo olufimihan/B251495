@@ -95,7 +95,7 @@ linetype = "solid", colour = "brown") + #reference lines to mark COVID-related w
   theme_minimal(base_size = 10))#thiscode suppresses warnings
 ggplotly(plot,tooltip="text",height=250) #convert ggplot to interactive plotly object with tooltips
 ```
-
+<!-- Button to open fullscreen modal --> <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#figure1Modal"> See Figure 1 in Full Screen </button> <!-- Modal --> <div class="modal fade" id="figure1Modal" tabindex="-1"> <div class="modal-dialog modal-dialog-centered p-8" style="max-width: 90%"> <div class="modal-content p-4"> interactive_plot </div> </div> </div> ```
 ------------------------------------------------------------------------
 
 ```{r message=FALSE, warning=FALSE}
@@ -122,10 +122,10 @@ combined_pop_simd <- SIMD %>%
 *Figure 2*
 ```{r figure2, message=FALSE, warning=FALSE,eval=TRUE}
 #| fig-align: center
-#| fig-width: 5
-#| fig_height: 5
+#| fig-width: 4
+#| fig_height: 4
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
-#| message: false
+
 
 # Make sure 'combined' exists as in previous chunks
 
@@ -170,7 +170,7 @@ theme(strip.text = element_text(size=10, face="bold"),
 plot.title = element_text(face="bold", size=12),
 plot.subtitle = element_text(size=8))
 # Convert to interactive map
-interactive_map <- girafe(ggobj = plot_map, width_svg = 5, height_svg = 5)
+interactive_map <- girafe(ggobj = plot_map, width_svg = 4, height_svg = 4)
 interactive_map
 ```
 
