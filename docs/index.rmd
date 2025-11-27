@@ -125,7 +125,7 @@ combined_pop_simd <- SIMD %>%
 #| fig-align: center
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
 
-# Make sure 'combined' exists as in previous chunks
+#make sure 'combined' exists as in previous chunks
 
 hb_prescribing <- filtered_winter_data %>%
 filter(winter_year >= 2019) %>%
@@ -140,7 +140,7 @@ left_join(population, by = "h_bname") %>%
 mutate(quantity_per_head = total_paid / hb_population) %>%
 filter(!is.na(h_bname))
 
-# Load shapefile for NHS Health Boards
+#load shapefile for NHS Health Boards
 NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp"), quiet = TRUE) %>%
 clean_names() %>% rename(h_bname = hb_name)
 
@@ -149,7 +149,7 @@ left_join(combined, by = "h_bname") %>%
 st_as_sf() %>%
 mutate(quantity_per_head = replace_na(quantity_per_head, 0))
 
-# Plot interactive map
+#plot interactive map
 plot_map <- retry_mapped_data %>%
 ggplot() +
 geom_sf_interactive(
@@ -167,7 +167,7 @@ theme_void(base_size = 8) +
 theme(strip.text = element_text(size=10, face="bold"),
 plot.title = element_text(face="bold", size=12),
 plot.subtitle = element_text(size=8))
-# Convert to interactive map
+#convert to interactive map
 interactive_map <- girafe(ggobj = plot_map, width_svg = 10, height_svg = 6)
 interactive_map
 ```
@@ -190,13 +190,13 @@ winter_population <- list.files(here("data", "winter_population"), pattern = "cs
 summary_winter_with_simd <- combined_pop_simd %>%
   filter(!is.na(simd2020v2_quintile), winter_year %in% c("2019","2022")) %>%
   group_by(simd2020v2_quintile, h_bname, gp_practice, winter_year) %>%
-  summarise(avg_paid_over_winters = mean(paid_quantity), .groups = "drop") %>%
+  summarise(avg_paid_over_winters = mean(paid_quantity)) %>%
   rename(practice_code = gp_practice) %>%
   mutate(winter_year = as.numeric(winter_year))
-# Join datasets
+#join datasets
 joined_data <- summary_winter_with_simd %>%
   full_join(winter_population, by = c("winter_year", "practice_code"))
-# Calculate prescriptions per 1000
+#calculate prescriptions per 1000
 final_boxplot <- joined_data %>%
   group_by(simd2020v2_quintile, h_bname, practice_code, winter_year) %>%
   reframe(
