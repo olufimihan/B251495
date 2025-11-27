@@ -74,12 +74,10 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
 
 ------------------------------------------------------------------------
 
-# Data wrangling {#Figure1}
+# Figure 1: Data wrangling {#Figure1}
 
-```{r warning=FALSE}
+```{r warning=FALSE, fig.width=5, fig.height=4}
 #| fig-align: center
-#| fig-width: 6
-#| fig-height: 6
 #| fig.cap: "The line graph shows a steady upward trend in winter antidepressant prescribing across all years. Although the COVID-19 period (2020–2022) is highlighted, prescribing patterns do not markedly diverge from pre-pandemic trends, with increases during COVID appearing slightly less steep than earlier years. The y-axis is truncated to improve visibility of year-to-year changes."
 #| message: false
 
@@ -129,12 +127,10 @@ combined_pop_simd <- SIMD %>%
 
 ------------------------------------------------------------------------
 
-# Data wrangling {#Figure2}
+# Figure 2: Data wrangling {#Figure2}
 
-```{r warning=FALSE}
+```{r warning=FALSE, fig.width=5, fig.height=6}
 #| fig-align: center
-#| fig-width: 6
-#| fig-height: 6
 #| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
 #| message: false
 
@@ -182,9 +178,9 @@ interactive_map <- girafe(ggobj = plot_map);interactive_map
 
 ------------------------------------------------------------------------
 
-#Data Wrangling{# Figure3 }
+# Figure 3: Data Wrangling {# Figure3}
 
-```{r message=FALSE, warning=FALSE,width=8,fig.height=4}
+```{r message=FALSE, warning=FALSE, fig.width=8, fig.height=4}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
   clean_names() %>%
@@ -239,9 +235,9 @@ The boxplot shows no strong socioeconomic gradient in antidepressant prescribing
 </div>
 ------------------------------------------------------------------------
 
-# Data wrangling {#Figure4}
+# Figure 4: Data wrangling {#Figure4}
 
-```{r message=FALSE, warning=FALSE,fig.width=8,fig.height=10}
+```{r message=FALSE, warning=FALSE, fig.width=8, fig.height=10}
 #create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
