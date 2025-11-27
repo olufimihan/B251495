@@ -177,7 +177,7 @@ interactive_map
 
 *Figure 3*
 
-```{r warning=FALSE,message=FALSE, fig.width=4, fig.height=3, out.width:'100%' }
+```{r warning=FALSE,message=FALSE, fig.width=8, fig.height=5, out.width:'100%'}
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
   clean_names() %>%
@@ -216,14 +216,14 @@ box2 <- final_boxplot %>%
   scale_fill_viridis(discrete = TRUE, alpha = 0.6) +
   scale_y_continuous(labels = scales::label_comma()) +
   coord_cartesian(ylim = c(0, 70000))  + #scaled y axis graph to be able to visualise better
-  theme_minimal(base_size=7) +
+  theme_minimal(base_size=10) +
   theme(legend.position = "none") +
   facet_wrap(~year_label) +
   labs(title = "Average Winter Antidepressant Prescriptions Per by SIMD Quintile",
     x = "SIMD Quintile (1 = Most Deprived)",
     y = "Avg prescriptions per 1000")
 
-ggplotly(box2, height=250)
+ggplotly(box2, width=900,height=500)
 ```
 
 ::: {style="text-align:center; font-size:0.9em; color:#555;"}
