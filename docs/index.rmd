@@ -29,12 +29,11 @@ Antidepressant medications were identified using the BNF item code prefix “040
 
 For the purpose of this study, the COVID-19 period is defined as March 2020 to June 2021, corresponding to the main period of national lockdowns. This places Winter 2019 as pre-COVID, Winter 2020/2021 as during COVID, and Winter 2022 as post-COVID.
 
-***
+------------------------------------------------------------------------
 
-<u>**RESULTS**</u>
 ```{r message=FALSE, warning=FALSE}
 ##Loading Necessary Packages
-library(tidyverse) # <2>
+library(tidyverse) 
 library(here) # directory stucture
 library(gt) # tables
 library(janitor) # cleaning data
@@ -46,7 +45,6 @@ library(viridis) # colour palette for map
 library(ggiraph)
 
 ```
-2.tidyverse
 
 ```{r message=FALSE, warning=FALSE}
 # Loading multiple data files (18 CSVs) containing counts of medications dispensed in the community
@@ -68,9 +66,11 @@ filtered_winter_data$healthboards <- gsub("[NA]","",filtered_winter_data$healthb
     filtered_winter_data$healthboards <-
       gsub("_","",filtered_winter_data$healthboards)#Remove any remaining 'NA' strings and underscores to standardize Health Board codes
 ```
-***
+
+------------------------------------------------------------------------
 
 **Figure 1**
+
 ```{r message=FALSE, warning=FALSE}
 #| fig-align: center
 #| fig-width: 6
@@ -94,20 +94,14 @@ linetype = "solid", colour = "brown") + geom_vline(xintercept = 2022,
 linetype = "solid", colour = "brown") + #reference lines to mark COVID-related winters
   scale_x_continuous(breaks=2017:2023) + #ensures all years appear on x-axis
   labs(title="Total Antidepressant Prescriptions During Winter Season",x="Winter Year",y="Total Antidepressant Prescriptions") +
-  theme_minimal() + 
- theme(
-    panel.background = element_rect(fill = "lightblue"),   # plot area colour
-    plot.background = element_rect(fill = "white"), # whole plot colour
-    panel.grid.major = element_line(colour="white",linewidth=0.5), # grid line colour and width
-    panel.grid.minor = element_line(colour="white",linewidth=0.3) #gridline colour and width
-  ))
+  theme_minimal() )#thiscode suppresses warnings
   
 ggplotly(plot,tooltip="text") #convert ggplot to interactive plotly object with tooltips
 ```
 
-***
+------------------------------------------------------------------------
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Prepare Population
 population <- readxl::read_excel(here("data","population.xlsx"), skip=10) %>% 
   clean_names() %>% 
@@ -128,10 +122,16 @@ combined_pop_simd <- SIMD %>%
   left_join(population,join_by(h_bname == h_bname))
 ```
 
-***
+------------------------------------------------------------------------
 
 **Figure 2**
-```{r}
+
+```{r message=FALSE, warning=FALSE}
+#| fig-align: center
+#| fig-width: 6
+#| fig-height: 6
+#| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
+#| message: false
 
 #sum antidepressant prescriptions per health board and winter year (from 2019 onwards)
 hb_prescribing <- filtered_winter_data %>%
@@ -174,17 +174,20 @@ plot_map <- retry_mapped_data %>%
 #convert to interactive map
 interactive_map <- girafe(ggobj = plot_map);interactive_map
 ```
-*results*
 
-Following from the overall increase in aantidepressant prescriptions shown in Figure 1, this map shows the geographic distribution of prescriotions and highlights both consistency and change. While the general north-south gradient in prescribing rates remained stable, the overall intensification post-2020 suggests a system wide response to increased levels depression.
-Interactive exploration of the map shows that health bards such as Lanarkshire and Glasgow experienced the largest increase in antidepressant prescriptions between the pre-COVID period(2019). The progression overall from 2020-2022 shows a clear deepinging of intesisty suggesting that regions with historically higher prescription rates saw even greater increases during and after the pandemic. This may reflect widening regional disparities.
-Overall, central Scotland, particularly the more densely populated urban belt, shows higher antidepressant prescriptions per head compared to the northern regions, suggesting that population density and urbanization may be associated with higher prescribing rates.
-
-***
+------------------------------------------------------------------------
 
 **Figure 3**
-```{r}
-#read and clean winter population data
+
+```{r message=FALSE, warning=FALSE}
+
+#| fig-align: center
+#| fig-width: 6
+#| fig-height: 6
+#| fig.cap: "The boxplot shows no strong socioeconomic gradient in antidepressant prescribing across SIMD quintiles, with median rates remaining relatively flat in both 2019 and 2022. Although overall prescribing increased uniformly after COVID-19, greater variability and more extreme outliers in 2022 suggest widening differences between individual health boards or practices, rather than between deprivation groups."
+#| message: false
+
+
 winter_population <- list.files(here("data", "winter_population"), pattern = "csv", full.names = TRUE) %>%
   map_dfr(read_csv) %>%
   clean_names() %>%
@@ -234,71 +237,84 @@ box2 <- final_boxplot %>%
 
 ggplotly(box2)
 ```
-*results*
 
-Contrary to expectations, the boxplot shows no strong socioeconomic gradient in antidepressant prescribing rates across SIMD quintiles. Although interactive inspection reveals slight differences in median values, the overall pattern remains relatively flat. Median prescribing rates roughly doubled across all SIMD groups between 2019 and 2022 (rising to around 28,000 per 1,000), but this shift appears uniform, suggesting a system-wide response to the pandemic’s mental-health impact rather than a disproportionate effect on specific socioeconomic groups. This contrasts with the clearer geographical differences observed in Figure 2.
-A flat pattern across deprivation levels could indicate equitable access to mental-health treatment. Alternatively, it may reflect potential under-prescribing in the most deprived areas (SIMD Quintile 1), where need would typically be expected to be higher.
-Both time periods show substantial upper-range outliers (50,000–70,000+ per 1,000), meaning some health boards or GP practices prescribe at rates two to three times above the median regardless of deprivation level or year. These persistent outliers likely point to local prescribing cultures, service availability, or population health differences, and warrant further investigation.
-While COVID-19 did not widen median socioeconomic inequalities in prescribing, it did increase variability within each SIMD group. The wider interquartile ranges and more extreme outliers in 2022 suggest growing disparities in how individual health boards or practices responded to mental-health demand during and after the pandemic, even when deprivation levels were similar.
+------------------------------------------------------------------------
 
-***
 **Figure 4**
 
-```{r}
-# Create health board deprivation profile
+```{r message=FALSE, warning=FALSE}
+
+#| fig-align: center
+#| fig-width: 6
+#| fig-height: 6
+#| fig.cap: "The lollipop chart highlights strong geographical inequalities in the impact of COVID-19 on antidepressant prescribing. Urban health boards(Lanarkshire and Greater Glasgow and clyde) show increases up to ten times greater than rural and island areas, suggesting that factors such as population density, service pressure, and differing pandemic experiences played a larger role than deprivation alone. message: false
+#create population-weighted deprivation profile per health board
 hb_deprivation <- SIMD %>%
   group_by(h_bname) %>%
-  summarise(
-    # Population-weighted average quintile
+  summarise(#weighted mean SIMD quintile (lower value = more deprived)
     avg_quintile = weighted.mean(simd2020v2_quintile, w = population, na.rm = TRUE),
-    
-    # Percentage in most deprived quintiles (Q1 & Q2)
-    pct_deprived = sum(population[simd2020v2_quintile <= 2], na.rm = TRUE) / 
-                   sum(population, na.rm = TRUE) * 100,
-    
-    # Total population for reference
-    total_pop = sum(population, na.rm = TRUE)
+#percentage of population living in most deprived quintiles (Q1 & Q2)
+    pct_deprived = sum(population[simd2020v2_quintile <= 2], na.rm = TRUE) /sum(population, na.rm = TRUE) * 100,
+#total population per health board (for reference)
+  total_pop = sum(population, na.rm = TRUE)
   ) %>%
-  arrange(avg_quintile)  # Lower = more deprived
+  arrange(avg_quintile)  #rank health boards from most → least deprived
 
-# Then join this to your prescribing data
+
+#join deprivation ranking to prescribing data (2019 = pre-COVID, 2022 = post-COVID)
 final_lollipop_data <- combined %>% 
-  filter(winter_year %in% c("2019","2022")) %>% 
-  mutate(period = ifelse(winter_year == 2019, "pre", "post")) %>%
-  left_join(hb_deprivation, by = "h_bname")
-
-# Now create your lollipop plot ordered by deprivation
+  filter(winter_year %in% c("2019", "2022")) %>%      #keep only pre and post pandemic years
+  mutate(period = ifelse(winter_year == 2019, "pre", "post")) %>%  #label periods
+  left_join(hb_deprivation, by = "h_bname")            #add deprivation profile
+#calculate % change in prescribing per health board
 lollipop_plot <- final_lollipop_data %>% 
   group_by(h_bname, period) %>% 
   summarise(
-    avg_prescribe = mean(total_paid),
-    avg_quintile = first(avg_quintile),  # Take the pre-calculated value
+    avg_prescribe = mean(total_paid),     
+    avg_quintile = first(avg_quintile), 
     .groups = "drop"
   ) %>% 
-  pivot_wider(names_from = period, values_from = avg_prescribe) %>%
-  mutate(pct_change = ((post - pre) / pre) * 100) %>%
-  arrange(avg_quintile) %>%  # Order by deprivation
-  mutate(h_bname = factor(h_bname, levels = unique(h_bname)))
-
-pct_lollipop <-lollipop_plot%>% 
-  ggplot () +
-  geom_segment(aes(x=h_bname, xend=h_bname, y=0, yend = pct_change), color = "skyblue")+
-  geom_point(aes(x = h_bname, y = pct_change),color = "blue", size=3, alpha = 0.6) +
+  pivot_wider(
+    names_from = period, 
+    values_from = avg_prescribe           #create 'pre' and 'post' columns
+  ) %>%
+  mutate(
+    pct_change = round(((post - pre) / pre) * 100, 2)  # Percentage change
+  ) %>%
+  arrange(avg_quintile) %>%               #rank health boards by deprivation
+  mutate(h_bname = factor(h_bname, levels = unique(h_bname)))  
+#lollipop Plot (with hover labels showing HB name + % change)
+pct_lollipop <- lollipop_plot %>% 
+  ggplot() +
+  geom_segment(
+    aes(
+      x = h_bname, xend = h_bname,
+      y = 0, yend = pct_change,
+      # Hover tooltip content for stems
+      text = paste0(
+        "Health Board: ", h_bname, "<br>",
+        "Change: ", pct_change, "%" )),
+    color = "skyblue" ) +
+  geom_point(
+    aes( x = h_bname, y = pct_change,
+      text = paste0(
+        "Health Board: ", h_bname, "<br>",
+        "Change: ", pct_change, "%")),
+    color = "blue", size = 3, alpha = 0.6)+
   theme_light() +
-  coord_flip() +  
-  theme(panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.y = element_blank()) +
-  labs( title = "Percentage Change in Prescribing per Health Board",
-    x = "Health Board",
-    y = "Percentage Change (%)")
-   ggplotly(pct_lollipop)
-   
-   
+  coord_flip() +
+  theme_minimal()+
+  labs(
+    title = "Percentage Change in Antidepressant Prescribing per Health Board (Pre vs Post COVID-19)",
+    x = "Health Board (ranked from most deprived to least deprived)",
+    y = "Percentage Change (%)"
+  )
+
+# Convert to interactive plot with hover labels
+ggplotly(pct_lollipop, tooltip = "text")
 ```
 
-***
+The lollipop data provides a summary of the impact of covid 19 .  overall each health board experienced and increase with deprevation not having as much of an impact as expects.However lankashire and glasgow has the bggest increase which could potential lbe linked to be more deprived or larger population.
+------------------------------------------------------------------------
 
-*Conclusion*
-*Limitations*
-*Next Steps*
+*Conclusion* *Limitations* *Next Steps*
