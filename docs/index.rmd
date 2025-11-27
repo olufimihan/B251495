@@ -1,5 +1,5 @@
 ---
-title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation? 2" 
+title: "How has the COVID-19 pandemic influenced winter antidepressant prescribing patterns across Scottish health boards, and does this vary by socioeconomic deprivation? 3" 
 output: 
   html_document:
     theme: lumen
@@ -121,10 +121,11 @@ combined_pop_simd <- SIMD %>%
 
 *Figure 2*
 ```{r figure2, message=FALSE, warning=FALSE,eval=TRUE}
-library(ggiraph)
-library(viridis)
-library(sf)
-library(ggplot2)
+#| fig-align: center
+#| fig-width: 5
+#| fig_height: 5
+#| fig.cap: "The map shows the geographic distribution of antidepressant prescriptions per head, revealing a consistent north–south gradient with higher rates in central urban regions. Post-2020 intensification suggests a system-wide rise in prescribing, with areas such as Lanarkshire and Glasgow showing the largest increases compared with 2019. Regions with historically higher prescribing appear to have experienced the greatest growth during and after the pandemic."
+#| message: false
 
 # Make sure 'combined' exists as in previous chunks
 
@@ -142,7 +143,6 @@ mutate(quantity_per_head = total_paid / hb_population) %>%
 filter(!is.na(h_bname))
 
 # Load shapefile for NHS Health Boards
-
 NHS_healthboards <- st_read(here("data","Week6_NHS_HealthBoards_2019.shp"), quiet = TRUE) %>%
 clean_names() %>% rename(h_bname = hb_name)
 
@@ -152,7 +152,6 @@ st_as_sf() %>%
 mutate(quantity_per_head = replace_na(quantity_per_head, 0))
 
 # Plot interactive map
-
 plot_map <- retry_mapped_data %>%
 ggplot() +
 geom_sf_interactive(
@@ -170,12 +169,9 @@ theme_void(base_size = 8) +
 theme(strip.text = element_text(size=10, face="bold"),
 plot.title = element_text(face="bold", size=12),
 plot.subtitle = element_text(size=8))
-
 # Convert to interactive map
-
-interactive_map <- girafe(ggobj = plot_map, width_svg = 6, height_svg = 6)
+interactive_map <- girafe(ggobj = plot_map, width_svg = 5, height_svg = 5)
 interactive_map
-
 ```
 
 *Figure 3*
