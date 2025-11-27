@@ -164,8 +164,7 @@ plot_map <- retry_mapped_data %>%
         plot.title = element_text(face="bold", size=12),
         plot.subtitle = element_text(size=8))
 #convert to interactive map
-interactive_map<-girafe(ggobj = plot_map,width_svg=5,height_svg=4)
-print(interactive_map)
+interactive_map<-girafe(ggobj = plot_map);interactive_map
 ```
 
 ------------------------------------------------------------------------
